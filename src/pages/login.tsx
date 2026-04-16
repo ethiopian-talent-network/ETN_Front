@@ -4,12 +4,16 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Separator } from "../components/ui/separator";
+<<<<<<< HEAD
 import axios from 'axios'
+=======
+>>>>>>> b74352d (front)
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+<<<<<<< HEAD
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -18,6 +22,11 @@ export default function Login() {
       password: password,
     });
 
+=======
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Handle login logic here
+>>>>>>> b74352d (front)
     console.log("Login:", { email, password });
   };
 
