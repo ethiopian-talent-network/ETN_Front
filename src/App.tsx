@@ -3,8 +3,11 @@ import Login from "./pages/login";
 import Signup from "./pages/signup";
 import Landing from "./pages/landing";
 import OtpVerification from "./pages/otp-verification";
-import EmployerDashboard from "./pages/employer-dashboard";
-import TalentDashboard from "./pages/talent-dashboard";
+import EmployerDashboard from "./pages/employerDashboard";
+import TalentDashboard from "./pages/talentDashboard";
+import Messages from "./pages/Messages";
+import JobPosting from "./pages/JobPosting";
+import FreelancerPublicProfile from "./pages/talentPublicProfile";
 
 function App() {
   return (
@@ -16,6 +19,16 @@ function App() {
         <Route path="/verify-otp" element={<OtpVerification />} />
         <Route path="/employer-dashboard" element={<EmployerDashboard />} />
         <Route path="/talent-dashboard" element={<TalentDashboard />} />
+        <Route path="/messages" element={<Messages />} />
+        <Route path="/post-job" element={<JobPosting />} />
+        <Route
+          path="/freelancer-profile"
+          element={<FreelancerPublicProfile />}
+        />
+        <Route
+          path="/freelancer-profile/:id"
+          element={<FreelancerPublicProfile />}
+        />
       </Routes>
     </BrowserRouter>
   );
