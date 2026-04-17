@@ -4,6 +4,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Separator } from "../components/ui/separator";
+import axios from "axios";
 
 export default function Signup() {
   const [firstName, setFirstName] = useState("");
@@ -12,21 +13,32 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [userType, setUserType] = useState<"employer" | "talent">("talent");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      console.log("Passwords do not match");
+      alert("password didnt match");
       return;
     }
+    try {
+      const response = await axios.post("http://localhost:5000/auth/signup", {
+        name: firstName,
+        email: email,
+        password: password,
+        passwordConfirm: confirmPassword,
+        selectedRole: userType,
+      });
 
-    console.log("Signup:", {
-      firstName,
-      email,
-      password,
-      confirmPassword,
-      userType,
-    });
+      alert(response.data.message);
+
+      // Redirect to OTP verification page with email parameter
+      window.location.href = `/verify-otp?email=${encodeURIComponent(email)}`;
+
+      console.log("Signup:", response.data);
+    } catch (error) {
+      console.log(error);
+      alert(error.response?.data?.message || "signup failed");
+    }
   };
 
   return (

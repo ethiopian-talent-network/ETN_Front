@@ -4,30 +4,47 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Separator } from "../components/ui/separator";
-<<<<<<< HEAD
-import axios from 'axios'
-=======
->>>>>>> b74352d (front)
+import axios from "axios";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-<<<<<<< HEAD
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Handle login logic
+    try {
+      const response = await axios.post("http://localhost:5000/auth/login", {
+        email: email,
+        password: password,
+      });
 
-    const response = await axios.post("http://localhost:3000/api/auth/login", {
-      email: email,
-      password: password,
-    });
+      console.log(response.data.role);
 
-=======
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle login logic here
->>>>>>> b74352d (front)
-    console.log("Login:", { email, password });
+      // Store token and redirect to appropriate dashboard based on role
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem(
+          "user",
+          JSON.stringify({ email, role: response.data.role }),
+        );
+
+        console.log(response.data);
+        if (response.data.role === "talent") {
+          window.location.href = "/talent-dashboard";
+        } else if (response.data.role === "employer") {
+          window.location.href = "/employer-dashboard";
+        } else {
+          alert("Invalid role");
+        }
+      } else {
+        alert(response.data.message);
+      }
+      console.log("Login:", response.data);
+    } catch (error) {
+      console.log(error);
+      alert(error.response?.data?.message || "Login failed");
+    }
   };
 
   return (
@@ -38,7 +55,9 @@ export default function Login() {
           {/* Logo */}
           <div className="mb-8">
             <h1 className="text-[#0084ca] font-bold text-3xl">ETN</h1>
-            <p className="text-sm text-gray-600 mt-1">Ethiopian Talent Network</p>
+            <p className="text-sm text-gray-600 mt-1">
+              Ethiopian Talent Network
+            </p>
           </div>
 
           {/* Title */}
@@ -107,7 +126,10 @@ export default function Login() {
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="email"
+                className="text-sm font-medium text-gray-700"
+              >
                 Email
               </Label>
               <Input
@@ -122,7 +144,10 @@ export default function Login() {
             </div>
 
             <div>
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="password"
+                className="text-sm font-medium text-gray-700"
+              >
                 Password
               </Label>
               <Input
@@ -143,11 +168,17 @@ export default function Login() {
                   type="checkbox"
                   className="h-4 w-4 text-[#0084ca] focus:ring-[#0084ca] border-gray-300 rounded"
                 />
-                <label htmlFor="remember" className="ml-2 text-sm text-gray-700">
+                <label
+                  htmlFor="remember"
+                  className="ml-2 text-sm text-gray-700"
+                >
                   Keep me logged in
                 </label>
               </div>
-              <button type="button" className="text-sm text-[#0084ca] hover:underline">
+              <button
+                type="button"
+                className="text-sm text-[#0084ca] hover:underline"
+              >
                 Forgot password?
               </button>
             </div>
@@ -164,7 +195,10 @@ export default function Login() {
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-600">
               Don't have an ETN account?{" "}
-              <Link to="/signup" className="text-[#0084ca] hover:underline font-medium">
+              <Link
+                to="/signup"
+                className="text-[#0084ca] hover:underline font-medium"
+              >
                 Sign Up
               </Link>
             </p>
@@ -175,28 +209,59 @@ export default function Login() {
       {/* Right side - Image/Illustration */}
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-[#0084ca] to-[#006ba6] items-center justify-center p-12">
         <div className="text-white max-w-lg">
-          <h2 className="text-4xl font-bold mb-6">
-            Find great talent
-          </h2>
+          <h2 className="text-4xl font-bold mb-6">Find great talent</h2>
           <p className="text-xl text-white/90 mb-8">
-            Work with the largest network of independent professionals and get things done—from quick turnarounds to big transformations.
+            Work with the largest network of independent professionals and get
+            things done—from quick turnarounds to big transformations.
           </p>
           <div className="space-y-4">
             <div className="flex items-start">
-              <svg className="w-6 h-6 mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-6 h-6 mr-3 mt-1 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
-              <p className="text-lg">Proof of quality with every talent profile</p>
+              <p className="text-lg">
+                Proof of quality with every talent profile
+              </p>
             </div>
             <div className="flex items-start">
-              <svg className="w-6 h-6 mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-6 h-6 mr-3 mt-1 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
               <p className="text-lg">Safe and secure payments</p>
             </div>
             <div className="flex items-start">
-              <svg className="w-6 h-6 mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-6 h-6 mr-3 mt-1 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
               <p className="text-lg">24/7 support</p>
             </div>
