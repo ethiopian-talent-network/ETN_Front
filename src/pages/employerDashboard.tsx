@@ -2,28 +2,44 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import DropdownMenu from "../components/ui/DropdownMenu";
+import { useDarkMode } from "../contexts/DarkModeContext";
 import {
   Search,
   Plus,
   Briefcase,
   MessageSquare,
   Bell,
-  User,
-  ChevronDown,
   Star,
   MapPin,
   DollarSign,
   Clock,
-  CheckCircle,
   FileText,
-  TrendingUp,
+  Moon,
+  Sun,
 } from "lucide-react";
 
 export default function EmployerDashboard() {
+  const { darkMode, toggleDarkMode } = useDarkMode();
   const [activeTab, setActiveTab] = useState<
     "jobs" | "talent" | "contracts" | "messages"
   >("jobs");
   const [searchQuery, setSearchQuery] = useState("");
+  const [userImage, setUserImage] = useState<string | undefined>();
+
+  const handleImageUpload = (file: File) => {
+    // Create a preview URL for the uploaded image
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      setUserImage(result);
+
+      // Here you would typically upload to your backend
+      console.log("Uploading image:", file);
+      // TODO: Implement actual upload logic to your API
+    };
+    reader.readAsDataURL(file);
+  };
 
   const activeJobs = [
     {
@@ -105,60 +121,108 @@ export default function EmployerDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className={`min-h-screen transition-colors duration-300 ${
+        darkMode ? "bg-gray-900" : "bg-gray-50"
+      }`}
+    >
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <header
+        className={`sticky top-0 z-50 transition-colors duration-300 ${
+          darkMode
+            ? "bg-gray-800 border-gray-700"
+            : "bg-white border-b border-gray-200"
+        }`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-8">
               <Link to="/" className="flex items-center">
-                <span className="text-upwork-h2 font-bold text-[#0084ca]">
-                  ETN
-                </span>
+                <span className="etn-brand-fancy text-2xl">ETN</span>
               </Link>
 
               <div className="hidden md:flex items-center gap-6">
-                <button className="text-upwork-body-medium text-gray-700 hover:text-gray-900">
+                <button
+                  className={`text-upwork-body-medium transition-colors duration-200 ${
+                    darkMode
+                      ? "text-gray-300 hover:text-white"
+                      : "text-gray-700 hover:text-gray-900"
+                  }`}
+                >
                   My Jobs
                 </button>
-                <button className="text-upwork-body-medium text-gray-700 hover:text-gray-900">
+                <button
+                  className={`text-upwork-body-medium transition-colors duration-200 ${
+                    darkMode
+                      ? "text-gray-300 hover:text-white"
+                      : "text-gray-700 hover:text-gray-900"
+                  }`}
+                >
                   All Contracts
                 </button>
-                <button className="text-upwork-body-medium text-gray-700 hover:text-gray-900">
+                <button
+                  className={`text-upwork-body-medium transition-colors duration-200 ${
+                    darkMode
+                      ? "text-gray-300 hover:text-white"
+                      : "text-gray-700 hover:text-gray-900"
+                  }`}
+                >
                   Reports
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <Link to="/post-job">
-                <Button
-                  variant="outline"
-                  className="hidden sm:flex items-center gap-2 btn-upwork-secondary"
-                >
-                  <Plus className="w-4 h-4" />
-                  Post a Job
-                </Button>
-              </Link>
+            <div className="flex items-center gap-3">
+              {/* Dark Mode Toggle */}
+              <button
+                onClick={toggleDarkMode}
+                className={`p-2.5 rounded-lg transition-all duration-200 hover:scale-105 ${
+                  darkMode
+                    ? "bg-gray-700 text-yellow-400 hover:bg-gray-600"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {darkMode ? (
+                  <Sun className="w-5 h-5" />
+                ) : (
+                  <Moon className="w-5 h-5" />
+                )}
+              </button>
 
-              <button className="relative p-2 text-gray-400 hover:text-gray-600">
+              <button
+                className={`relative p-2.5 rounded-lg transition-all duration-200 ${
+                  darkMode
+                    ? "text-gray-400 hover:text-gray-300 hover:bg-gray-700"
+                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                }`}
+              >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
 
               <Link to="/messages">
-                <button className="relative p-2 text-gray-400 hover:text-gray-600">
-                  <MessageSquare className="w-5 h-5" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                <button
+                  className={`relative p-2.5 rounded-lg transition-all duration-200 group ${
+                    darkMode
+                      ? "text-gray-400 hover:text-gray-300 hover:bg-gray-700"
+                      : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <MessageSquare
+                    className={`w-5 h-5 ${darkMode ? "group-hover:text-gray-300" : "group-hover:text-gray-700"}`}
+                  />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                  <span className="sr-only">Messages</span>
                 </button>
               </Link>
 
-              <button className="flex items-center gap-2 p-1 hover:bg-gray-100 rounded-full">
-                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-gray-600" />
-                </div>
-                <ChevronDown className="w-4 h-4 text-gray-600" />
-              </button>
+              <DropdownMenu
+                userName="Abebe Kebede"
+                userEmail="abebe.kebede@example.com"
+                userImage={userImage}
+                userId="current-user"
+                onImageUpload={handleImageUpload}
+              />
             </div>
           </div>
         </div>

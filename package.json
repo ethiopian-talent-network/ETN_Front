@@ -13,6 +13,8 @@
     "@fontsource-variable/geist": "^5.2.8",
     "@fontsource-variable/inter": "^5.2.8",
     "@fontsource-variable/space-grotesk": "^5.2.10",
+    "@fontsource/luckiest-guy": "^5.2.8",
+    "@fontsource/miniver": "^5.2.7",
     "@tailwindcss/vite": "^4.2.2",
     "axios": "^1.15.0",
     "class-variance-authority": "^0.7.1",

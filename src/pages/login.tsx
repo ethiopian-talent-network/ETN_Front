@@ -4,80 +4,116 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Separator } from "../components/ui/separator";
-import axios from "axios";
+import { useDarkMode } from "../contexts/DarkModeContext";
 
 export default function Login() {
+  const { darkMode, toggleDarkMode } = useDarkMode();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic
-    try {
-      const response = await axios.post("http://localhost:5000/auth/login", {
-        email: email,
-        password: password,
-      });
-
-      console.log(response.data.role);
-
-      // Store token and redirect to appropriate dashboard based on role
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem(
-          "user",
-          JSON.stringify({ email, role: response.data.role }),
-        );
-
-        console.log(response.data);
-        if (response.data.role === "talent") {
-          window.location.href = "/talent-dashboard";
-        } else if (response.data.role === "employer") {
-          window.location.href = "/employer-dashboard";
-        } else {
-          alert("Invalid role");
-        }
-      } else {
-        alert(response.data.message);
-      }
-      console.log("Login:", response.data);
-    } catch (error) {
-      console.log(error);
-      alert(error.response?.data?.message || "Login failed");
-    }
+    // Handle login logic here
+    console.log("Login:", { email, password });
   };
 
   return (
-    <div className="min-h-screen bg-white flex">
+    <div
+      className={`min-h-screen flex transition-colors duration-300 ${
+        darkMode ? "bg-gray-900" : "bg-white"
+      }`}
+    >
       {/* Left side - Form */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+      <div
+        className={`flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 transition-colors duration-300 ${
+          darkMode ? "bg-gray-900" : "bg-white"
+        }`}
+      >
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="mb-8">
             <h1 className="text-[#0084ca] font-bold text-3xl">ETN</h1>
-            <p className="text-sm text-gray-600 mt-1">
+            <p
+              className={`text-sm mt-1 transition-colors duration-300 ${
+                darkMode ? "text-gray-400" : "text-gray-600"
+              }`}
+            >
               Ethiopian Talent Network
             </p>
           </div>
 
           {/* Title */}
           <div className="mb-8">
-            <h2 className="text-2xl font-medium text-gray-900 mb-2">
-              Log in to ETN
+            <h2
+              className={`text-3xl font-bold transition-colors duration-300 ${
+                darkMode ? "text-white" : "text-gray-900"
+              }`}
+            >
+              Welcome back
             </h2>
+            <p
+              className={`mt-2 text-sm transition-colors duration-300 ${
+                darkMode ? "text-gray-400" : "text-gray-600"
+              }`}
+            >
+              Sign in to your ETN account
+            </p>
+          </div>
+
+          {/* Dark Mode Toggle */}
+          <div className="flex justify-center mb-6">
+            <button
+              onClick={toggleDarkMode}
+              className={`p-3 rounded-lg transition-all duration-300 hover:scale-110 ${
+                darkMode
+                  ? "bg-gray-800 text-yellow-400 hover:bg-gray-700"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {darkMode ? (
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                  />
+                </svg>
+              )}
+            </button>
           </div>
 
           {/* Social Login Buttons */}
           <div className="space-y-3 mb-6">
             <Button
               variant="outline"
-              className="w-full h-12 border-gray-300 hover:bg-gray-50 text-gray-700"
+              className={`w-full h-12 transition-colors duration-300 ${
+                darkMode
+                  ? "border-gray-600 hover:bg-gray-800 text-gray-300 hover:text-white"
+                  : "border-gray-300 hover:bg-gray-50 text-gray-700"
+              }`}
             >
-              <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
+              <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="#4285F4">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                 <path
                   fill="#34A853"
                   d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
@@ -96,7 +132,11 @@ export default function Login() {
 
             <Button
               variant="outline"
-              className="w-full h-12 border-gray-300 hover:bg-gray-50 text-gray-700"
+              className={`w-full h-12 transition-colors duration-300 ${
+                darkMode
+                  ? "border-gray-600 hover:bg-gray-800 text-gray-300 hover:text-white"
+                  : "border-gray-300 hover:bg-gray-50 text-gray-700"
+              }`}
             >
               <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="#0A66C2">
                 <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
@@ -106,7 +146,11 @@ export default function Login() {
 
             <Button
               variant="outline"
-              className="w-full h-12 border-gray-300 hover:bg-gray-50 text-gray-700"
+              className={`w-full h-12 transition-colors duration-300 ${
+                darkMode
+                  ? "border-gray-600 hover:bg-gray-800 text-gray-300 hover:text-white"
+                  : "border-gray-300 hover:bg-gray-50 text-gray-700"
+              }`}
             >
               <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="#000">
                 <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
@@ -119,7 +163,15 @@ export default function Login() {
           <div className="relative mb-6">
             <Separator />
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="bg-white px-4 text-sm text-gray-500">or</span>
+              <span
+                className={`px-4 text-sm transition-colors duration-300 ${
+                  darkMode
+                    ? "bg-gray-900 text-gray-400"
+                    : "bg-white text-gray-500"
+                }`}
+              >
+                or
+              </span>
             </div>
           </div>
 
@@ -128,7 +180,9 @@ export default function Login() {
             <div>
               <Label
                 htmlFor="email"
-                className="text-sm font-medium text-gray-700"
+                className={`text-sm font-medium transition-colors duration-300 ${
+                  darkMode ? "text-gray-300" : "text-gray-700"
+                }`}
               >
                 Email
               </Label>
@@ -137,7 +191,11 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1.5 h-12 border-gray-300"
+                className={`mt-1.5 h-12 transition-colors duration-300 ${
+                  darkMode
+                    ? "bg-gray-800 border-gray-600 text-white placeholder-gray-400"
+                    : "border-gray-300"
+                }`}
                 placeholder="Email"
                 required
               />
@@ -146,7 +204,9 @@ export default function Login() {
             <div>
               <Label
                 htmlFor="password"
-                className="text-sm font-medium text-gray-700"
+                className={`text-sm font-medium transition-colors duration-300 ${
+                  darkMode ? "text-gray-300" : "text-gray-700"
+                }`}
               >
                 Password
               </Label>
@@ -155,7 +215,11 @@ export default function Login() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1.5 h-12 border-gray-300"
+                className={`mt-1.5 h-12 transition-colors duration-300 ${
+                  darkMode
+                    ? "bg-gray-800 border-gray-600 text-white placeholder-gray-400"
+                    : "border-gray-300"
+                }`}
                 placeholder="Password"
                 required
               />
@@ -166,18 +230,26 @@ export default function Login() {
                 <input
                   id="remember"
                   type="checkbox"
-                  className="h-4 w-4 text-[#0084ca] focus:ring-[#0084ca] border-gray-300 rounded"
+                  className={`h-4 w-4 text-[#0084ca] focus:ring-[#0084ca] rounded transition-colors duration-300 ${
+                    darkMode ? "border-gray-600 bg-gray-800" : "border-gray-300"
+                  }`}
                 />
                 <label
                   htmlFor="remember"
-                  className="ml-2 text-sm text-gray-700"
+                  className={`ml-2 text-sm transition-colors duration-300 ${
+                    darkMode ? "text-gray-300" : "text-gray-700"
+                  }`}
                 >
                   Keep me logged in
                 </label>
               </div>
               <button
                 type="button"
-                className="text-sm text-[#0084ca] hover:underline"
+                className={`text-sm transition-colors duration-300 hover:underline ${
+                  darkMode
+                    ? "text-[#0084ca] hover:text-[#0099e6]"
+                    : "text-[#0084ca]"
+                }`}
               >
                 Forgot password?
               </button>
@@ -193,11 +265,19 @@ export default function Login() {
 
           {/* Sign up link */}
           <div className="mt-8 text-center">
-            <p className="text-sm text-gray-600">
+            <p
+              className={`text-sm transition-colors duration-300 ${
+                darkMode ? "text-gray-400" : "text-gray-600"
+              }`}
+            >
               Don't have an ETN account?{" "}
               <Link
                 to="/signup"
-                className="text-[#0084ca] hover:underline font-medium"
+                className={`font-medium transition-colors duration-300 hover:underline ${
+                  darkMode
+                    ? "text-[#0084ca] hover:text-[#0099e6]"
+                    : "text-[#0084ca]"
+                }`}
               >
                 Sign Up
               </Link>

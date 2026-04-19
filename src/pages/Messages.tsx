@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { useDarkMode } from "../contexts/DarkModeContext";
 import {
   ArrowLeft,
   Search,
@@ -12,9 +13,12 @@ import {
   Star,
   CheckCheck,
   User,
+  Moon,
+  Sun,
 } from "lucide-react";
 
 export default function Messages() {
+  const { darkMode, toggleDarkMode } = useDarkMode();
   const [selectedChat, setSelectedChat] = useState(1);
   const [messageText, setMessageText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,7 +28,8 @@ export default function Messages() {
       id: 1,
       name: "Yohannes Tadesse",
       role: "Full Stack Developer",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",
       lastMessage: "I'll have the first draft ready by tomorrow",
       timestamp: "2m ago",
       unread: 2,
@@ -34,8 +39,10 @@ export default function Messages() {
       id: 2,
       name: "Meron Alemayehu",
       role: "UI/UX Designer",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",
-      lastMessage: "The designs look great! Let me know if you need any changes",
+      avatar:
+        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",
+      lastMessage:
+        "The designs look great! Let me know if you need any changes",
       timestamp: "1h ago",
       unread: 0,
       online: true,
@@ -44,7 +51,8 @@ export default function Messages() {
       id: 3,
       name: "Daniel Haile",
       role: "Mobile Developer",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",
+      avatar:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",
       lastMessage: "Thanks for the feedback. I've updated the app",
       timestamp: "3h ago",
       unread: 0,
@@ -54,7 +62,8 @@ export default function Messages() {
       id: 4,
       name: "Sara Mohammed",
       role: "Graphic Designer",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100",
+      avatar:
+        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100",
       lastMessage: "I can start on Monday. Does that work for you?",
       timestamp: "1d ago",
       unread: 1,
@@ -125,22 +134,52 @@ export default function Messages() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className={`min-h-screen transition-colors duration-300 ${
+        darkMode ? "bg-gray-900" : "bg-gray-50"
+      }`}
+    >
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header
+        className={`transition-colors duration-300 ${
+          darkMode
+            ? "bg-gray-800 border-gray-700"
+            : "bg-white border-b border-gray-200"
+        }`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link
-              to="/client-dashboard"
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+              to="/talent-profile"
+              className={`flex items-center gap-2 text-sm font-medium transition-colors duration-300 ${
+                darkMode
+                  ? "text-gray-300 hover:text-white"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
             >
               <ArrowLeft className="w-5 h-5" />
-              <span className="text-sm font-medium">Back to Dashboard</span>
+              <span>Back to Profile</span>
             </Link>
-            <Link to="/talent-dashboard" className="text-2xl font-bold text-[#0084ca]">
+            <Link to="/talent-profile" className="etn-brand-fancy text-2xl">
               ETN
             </Link>
-            <div className="w-32"></div>
+            <div className="flex items-center gap-4">
+              {/* Dark Mode Toggle */}
+              <button
+                onClick={toggleDarkMode}
+                className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
+                  darkMode
+                    ? "bg-gray-700 text-yellow-400 hover:bg-gray-600"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {darkMode ? (
+                  <Sun className="w-5 h-5" />
+                ) : (
+                  <Moon className="w-5 h-5" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -189,10 +228,16 @@ export default function Messages() {
                         <h3 className="font-semibold text-gray-900 truncate">
                           {conversation.name}
                         </h3>
-                        <span className="text-xs text-gray-500">{conversation.timestamp}</span>
+                        <span className="text-xs text-gray-500">
+                          {conversation.timestamp}
+                        </span>
                       </div>
-                      <p className="text-sm text-gray-600 mb-1">{conversation.role}</p>
-                      <p className="text-sm text-gray-600 truncate">{conversation.lastMessage}</p>
+                      <p className="text-sm text-gray-600 mb-1">
+                        {conversation.role}
+                      </p>
+                      <p className="text-sm text-gray-600 truncate">
+                        {conversation.lastMessage}
+                      </p>
                     </div>
                     {conversation.unread > 0 && (
                       <div className="w-5 h-5 bg-[#0084ca] text-white text-xs rounded-full flex items-center justify-center font-medium">
@@ -223,7 +268,9 @@ export default function Messages() {
                       )}
                     </div>
                     <div>
-                      <h2 className="font-semibold text-gray-900">{currentChat.name}</h2>
+                      <h2 className="font-semibold text-gray-900">
+                        {currentChat.name}
+                      </h2>
                       <p className="text-sm text-gray-600">
                         {currentChat.online ? "Active now" : "Offline"}
                       </p>
@@ -273,7 +320,10 @@ export default function Messages() {
 
                 {/* Message Input */}
                 <div className="p-4 border-t border-gray-200">
-                  <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+                  <form
+                    onSubmit={handleSendMessage}
+                    className="flex items-end gap-2"
+                  >
                     <button
                       type="button"
                       className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
