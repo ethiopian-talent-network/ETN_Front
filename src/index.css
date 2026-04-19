@@ -6,9 +6,13 @@ body {
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/space-grotesk";
+@import "@fontsource/luckiest-guy";
+@import "@fontsource/miniver";
 
+/* Tailwind CSS v4 custom variant */
 @custom-variant dark (&:is(.dark *));
 
+/* Tailwind CSS v4 theme configuration */
 @theme inline {
   --font-heading:
     "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -317,4 +321,30 @@ body {
 .link-upwork-secondary:hover {
   color: #108a00;
   text-decoration: underline;
+}
+
+/* Fancy ETN Branding Font */
+.etn-brand {
+  font-family: "Miniver", cursive;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: var(--color-primary, #0084ca);
+  text-shadow: 0 1px 2px rgba(0, 132, 202, 0.1);
+}
+
+.etn-brand-simple {
+  font-family: "Miniver", cursive;
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  color: var(--color-primary, #0084ca);
+}
+
+.etn-brand-fancy {
+  font-family: "Miniver", cursive;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--color-primary, #0084ca);
+  transform: perspective(500px) rotateX(3deg);
+  display: inline-block;
+  text-shadow: 0 2px 4px rgba(0, 132, 202, 0.15);
 }
