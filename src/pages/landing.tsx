@@ -87,23 +87,27 @@ export default function Landing() {
       title: "AI-Powered Matching",
       description:
         "Our intelligent system matches you with the perfect talent based on skills and requirements",
+      category: "Technology",
     },
     {
       icon: CreditCard,
       title: "Local Payments",
       description:
         "Pay securely with Chapa, Telebirr, CBE Birr, and other Ethiopian payment methods",
+      category: "Payment",
     },
     {
       icon: Shield,
       title: "Verified Profiles",
       description:
         "All freelancers verified with Ethiopian ID and professional credentials",
+      category: "Security",
     },
     {
       icon: Zap,
       title: "Quick Hiring",
       description: "Post jobs and receive qualified proposals within 24 hours",
+      category: "Hiring",
     },
   ];
 

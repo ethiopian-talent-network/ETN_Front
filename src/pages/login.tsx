@@ -1,20 +1,60 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Separator } from "../components/ui/separator";
 import { useDarkMode } from "../contexts/DarkModeContext";
+import { useAuth } from "../contexts/AuthContext";
+import axios from "axios";
 
 export default function Login() {
   const { darkMode, toggleDarkMode } = useDarkMode();
+  const { login } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log("Login:", { email, password });
+
+    try {
+      const response = await axios.post("http://localhost:5000/auth/login", {
+        email: email,
+        password: password,
+      });
+
+      const token = response.data.token;
+      const role = response.data.role;
+
+      // Create user object from response
+      const user = {
+        id: response.data.user_id || 0,
+        email: email,
+        name: response.data.name || email.split("@")[0],
+        role: role,
+      };
+
+      login(token, user);
+
+      if (role === "talent") {
+        navigate("/talent-dashboard");
+      } else if (role === "employer") {
+        navigate("/employer-dashboard");
+      }
+    } catch (error: any) {
+      if (axios.isAxiosError(error)) {
+        if (error.code === "ERR_NETWORK") {
+          alert("Network error. Please check your connection.");
+        } else {
+          alert(
+            error.response?.data?.message || "Login failed. Please try again.",
+          );
+        }
+      } else {
+        alert("An unexpected error occurred. Please try again.");
+      }
+    }
   };
 
   return (
@@ -31,10 +71,12 @@ export default function Login() {
       >
         <div className="w-full max-w-md">
           {/* Logo */}
-          <div className="mb-8">
-            <h1 className="text-[#0084ca] font-bold text-3xl">ETN</h1>
+          <div className="mb-8 animate-fade-in-down">
+            <h1 className="text-[#0084ca] font-bold text-3xl animate-pulse-slow">
+              ETN
+            </h1>
             <p
-              className={`text-sm mt-1 transition-colors duration-300 ${
+              className={`text-sm mt-1 transition-colors duration-300 animate-fade-in-up ${
                 darkMode ? "text-gray-400" : "text-gray-600"
               }`}
             >
@@ -43,7 +85,7 @@ export default function Login() {
           </div>
 
           {/* Title */}
-          <div className="mb-8">
+          <div className="mb-8 animate-fade-in-up animation-delay-200">
             <h2
               className={`text-3xl font-bold transition-colors duration-300 ${
                 darkMode ? "text-white" : "text-gray-900"
@@ -52,7 +94,7 @@ export default function Login() {
               Welcome back
             </h2>
             <p
-              className={`mt-2 text-sm transition-colors duration-300 ${
+              className={`mt-2 text-sm transition-colors duration-300 animate-fade-in-up ${
                 darkMode ? "text-gray-400" : "text-gray-600"
               }`}
             >
@@ -61,10 +103,10 @@ export default function Login() {
           </div>
 
           {/* Dark Mode Toggle */}
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center mb-6 animate-fade-in-up animation-delay-400">
             <button
               onClick={toggleDarkMode}
-              className={`p-3 rounded-lg transition-all duration-300 hover:scale-110 ${
+              className={`p-3 rounded-lg transition-all duration-300 hover:scale-110 hover:rotate-12 animate-bounce-slow ${
                 darkMode
                   ? "bg-gray-800 text-yellow-400 hover:bg-gray-700"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -106,7 +148,7 @@ export default function Login() {
           <div className="space-y-3 mb-6">
             <Button
               variant="outline"
-              className={`w-full h-12 transition-colors duration-300 ${
+              className={`w-full h-12 transition-colors duration-200 ${
                 darkMode
                   ? "border-gray-600 hover:bg-gray-800 text-gray-300 hover:text-white"
                   : "border-gray-300 hover:bg-gray-50 text-gray-700"
@@ -132,7 +174,7 @@ export default function Login() {
 
             <Button
               variant="outline"
-              className={`w-full h-12 transition-colors duration-300 ${
+              className={`w-full h-12 transition-colors duration-200 ${
                 darkMode
                   ? "border-gray-600 hover:bg-gray-800 text-gray-300 hover:text-white"
                   : "border-gray-300 hover:bg-gray-50 text-gray-700"
@@ -146,7 +188,7 @@ export default function Login() {
 
             <Button
               variant="outline"
-              className={`w-full h-12 transition-colors duration-300 ${
+              className={`w-full h-12 transition-colors duration-200 ${
                 darkMode
                   ? "border-gray-600 hover:bg-gray-800 text-gray-300 hover:text-white"
                   : "border-gray-300 hover:bg-gray-50 text-gray-700"
@@ -176,11 +218,14 @@ export default function Login() {
           </div>
 
           {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-5 animate-fade-in-up animation-delay-800"
+          >
+            <div className="">
               <Label
                 htmlFor="email"
-                className={`text-sm font-medium transition-colors duration-300 ${
+                className={`text-sm font-medium  ${
                   darkMode ? "text-gray-300" : "text-gray-700"
                 }`}
               >
@@ -191,7 +236,7 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={`mt-1.5 h-12 transition-colors duration-300 ${
+                className={`mt-1.5 h-12  ${
                   darkMode
                     ? "bg-gray-800 border-gray-600 text-white placeholder-gray-400"
                     : "border-gray-300"
@@ -201,10 +246,10 @@ export default function Login() {
               />
             </div>
 
-            <div>
+            <div className="">
               <Label
                 htmlFor="password"
-                className={`text-sm font-medium transition-colors duration-300 ${
+                className={`text-sm font-medium${
                   darkMode ? "text-gray-300" : "text-gray-700"
                 }`}
               >
@@ -215,7 +260,7 @@ export default function Login() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={`mt-1.5 h-12 transition-colors duration-300 ${
+                className={`mt-1.5 h-12 ${
                   darkMode
                     ? "bg-gray-800 border-gray-600 text-white placeholder-gray-400"
                     : "border-gray-300"
@@ -225,12 +270,12 @@ export default function Login() {
               />
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between animate-fade-in-up animation-delay-1100">
               <div className="flex items-center">
                 <input
                   id="remember"
                   type="checkbox"
-                  className={`h-4 w-4 text-[#0084ca] focus:ring-[#0084ca] rounded transition-colors duration-300 ${
+                  className={`h-4 w-4 text-[#0084ca] focus:ring-[#0084ca] rounded transition-all duration-300 hover:scale-110 ${
                     darkMode ? "border-gray-600 bg-gray-800" : "border-gray-300"
                   }`}
                 />
@@ -245,7 +290,7 @@ export default function Login() {
               </div>
               <button
                 type="button"
-                className={`text-sm transition-colors duration-300 hover:underline ${
+                className={`text-sm transition-all duration-300 hover:underline hover:scale-105 ${
                   darkMode
                     ? "text-[#0084ca] hover:text-[#0099e6]"
                     : "text-[#0084ca]"
@@ -257,14 +302,14 @@ export default function Login() {
 
             <Button
               type="submit"
-              className="w-full h-12 bg-[#0084ca] hover:bg-[#006ba6] text-white font-medium rounded-full"
+              className="w-full h-12 bg-[#0084ca] hover:bg-[#006ba6] text-white font-medium rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg transform hover:-translate-y-1 animate-pulse-slow"
             >
               Log in
             </Button>
           </form>
 
           {/* Sign up link */}
-          <div className="mt-8 text-center">
+          <div className="mt-8 text-center animate-fade-in-up animation-delay-1200">
             <p
               className={`text-sm transition-colors duration-300 ${
                 darkMode ? "text-gray-400" : "text-gray-600"
@@ -273,7 +318,7 @@ export default function Login() {
               Don't have an ETN account?{" "}
               <Link
                 to="/signup"
-                className={`font-medium transition-colors duration-300 hover:underline ${
+                className={`font-medium transition-all duration-300 hover:underline hover:scale-105 ${
                   darkMode
                     ? "text-[#0084ca] hover:text-[#0099e6]"
                     : "text-[#0084ca]"
@@ -287,63 +332,206 @@ export default function Login() {
       </div>
 
       {/* Right side - Image/Illustration */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-[#0084ca] to-[#006ba6] items-center justify-center p-12">
-        <div className="text-white max-w-lg">
-          <h2 className="text-4xl font-bold mb-6">Find great talent</h2>
-          <p className="text-xl text-white/90 mb-8">
-            Work with the largest network of independent professionals and get
-            things done—from quick turnarounds to big transformations.
-          </p>
-          <div className="space-y-4">
-            <div className="flex items-start">
-              <svg
-                className="w-6 h-6 mr-3 mt-1 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              <p className="text-lg">
-                Proof of quality with every talent profile
-              </p>
+      <div className="hidden lg:flex flex-1 relative overflow-hidden">
+        {/* Background Image with Overlay */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0084ca]/90 to-[#006ba6]/90 z-10"></div>
+          <img
+            src="https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=1920&h=1080&fit=crop&crop=entropy&auto=format"
+            alt="Professional workspace with Ethiopian context"
+            className="w-full h-full object-cover"
+          />
+        </div>
+        {/* Animated Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-full h-full animate-pulse-slow">
+            <svg
+              className="w-full h-full"
+              viewBox="0 0 400 400"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <defs>
+                <pattern
+                  id="grid"
+                  width="40"
+                  height="40"
+                  patternUnits="userSpaceOnUse"
+                >
+                  <path
+                    d="M 40 0 L 0 0 0 40"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="1"
+                  />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid)" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Enhanced Floating Elements with Better Animations */}
+        <div className="absolute top-10 right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl animate-float"></div>
+        <div className="absolute bottom-20 left-10 w-48 h-48 bg-white/10 rounded-full blur-3xl animate-float-delayed"></div>
+        <div className="absolute top-1/3 right-1/4 w-24 h-24 bg-white/5 rounded-full blur-xl animate-pulse-slow"></div>
+        <div className="absolute top-2/3 left-1/3 w-20 h-20 bg-white/5 rounded-full blur-lg animate-float-reverse"></div>
+
+        {/* Animated Ethiopian Cultural Elements */}
+        <div className="absolute top-20 left-20 opacity-20 animate-spin-slow">
+          <svg
+            className="w-16 h-16 text-white"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" />
+          </svg>
+        </div>
+        <div className="absolute bottom-20 right-20 opacity-20 animate-bounce-slow">
+          <svg
+            className="w-20 h-20 text-white"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+          </svg>
+        </div>
+
+        {/* Animated Particles */}
+        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-white/30 rounded-full animate-particle-1"></div>
+        <div className="absolute top-3/4 right-1/3 w-2 h-2 bg-white/30 rounded-full animate-particle-2"></div>
+        <div className="absolute bottom-1/3 left-1/2 w-2 h-2 bg-white/30 rounded-full animate-particle-3"></div>
+
+        {/* Main Content with Enhanced Animations */}
+        <div className="relative z-10 flex items-center justify-center p-12 h-full">
+          <div className="text-white max-w-lg animate-slide-in-right">
+            <div className="mb-8 animate-fade-in-up animation-delay-200">
+              <div className="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm border border-white/30 animate-pulse-slow hover:scale-110 transition-transform duration-300">
+                <svg
+                  className="w-12 h-12 text-white animate-spin-slow"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+              </div>
             </div>
-            <div className="flex items-start">
-              <svg
-                className="w-6 h-6 mr-3 mt-1 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              <p className="text-lg">Safe and secure payments</p>
+
+            <h2 className="text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-100 animate-fade-in-up animation-delay-400">
+              Welcome to ETN
+            </h2>
+            <p className="text-xl text-white/90 mb-12 leading-relaxed animate-fade-in-up animation-delay-600">
+              Connect with Ethiopia's finest talent and transform your business
+              with AI-powered matching and secure local payments.
+            </p>
+
+            <div className="space-y-6">
+              <div className="flex items-start group hover:scale-105 transition-all duration-300 animate-fade-in-up animation-delay-800">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mr-4 backdrop-blur-sm border border-white/30 group-hover:bg-white/30 transition-all duration-300 group-hover:rotate-12">
+                  <svg
+                    className="w-6 h-6 text-white group-hover:scale-110 transition-transform duration-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">
+                    Verified Professionals
+                  </h3>
+                  <p className="text-white/80">
+                    Every talent is thoroughly vetted and verified
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start group hover:scale-105 transition-all duration-300 animate-fade-in-up animation-delay-1000">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mr-4 backdrop-blur-sm border border-white/30 group-hover:bg-white/30 transition-all duration-300 group-hover:rotate-12">
+                  <svg
+                    className="w-6 h-6 text-white group-hover:scale-110 transition-transform duration-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">
+                    Local Payment Methods
+                  </h3>
+                  <p className="text-white/80">
+                    Support for Ethiopian banks and mobile money
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start group hover:scale-105 transition-all duration-300 animate-fade-in-up animation-delay-1200">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mr-4 backdrop-blur-sm border border-white/30 group-hover:bg-white/30 transition-all duration-300 group-hover:rotate-12">
+                  <svg
+                    className="w-6 h-6 text-white group-hover:scale-110 transition-transform duration-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">
+                    AI-Powered Matching
+                  </h3>
+                  <p className="text-white/80">
+                    Smart algorithms connect you with the perfect talent
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="flex items-start">
-              <svg
-                className="w-6 h-6 mr-3 mt-1 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              <p className="text-lg">24/7 support</p>
+
+            {/* Enhanced Stats Section */}
+            <div className="mt-12 pt-8 border-t border-white/20 animate-fade-in-up animation-delay-1400">
+              <div className="grid grid-cols-3 gap-6">
+                <div className="text-center group hover:scale-110 transition-transform duration-300">
+                  <div className="text-3xl font-bold text-white animate-count-up">
+                    10K+
+                  </div>
+                  <div className="text-sm text-white/70">Active Talents</div>
+                </div>
+                <div className="text-center group hover:scale-110 transition-transform duration-300">
+                  <div className="text-3xl font-bold text-white animate-count-up">
+                    95%
+                  </div>
+                  <div className="text-sm text-white/70">Success Rate</div>
+                </div>
+                <div className="text-center group hover:scale-110 transition-transform duration-300">
+                  <div className="text-3xl font-bold text-white animate-count-up">
+                    24/7
+                  </div>
+                  <div className="text-sm text-white/70">Support</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
