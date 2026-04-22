@@ -7,6 +7,7 @@ import { Separator } from "../components/ui/separator";
 import { useDarkMode } from "../contexts/DarkModeContext";
 import { useAuth } from "../contexts/AuthContext";
 import axios from "axios";
+import { API_BASE_URL } from "../config/api";
 
 export default function Login() {
   const { darkMode, toggleDarkMode } = useDarkMode();
@@ -19,7 +20,7 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const response = await axios.post("http://localhost:5000/auth/login", {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
         email: email,
         password: password,
       });

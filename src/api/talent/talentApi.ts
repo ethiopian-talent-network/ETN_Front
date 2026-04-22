@@ -9,6 +9,7 @@ const getAuthHeaders = () => {
 export interface TalentProfile {
   name: string;
   email: string;
+  about?: string;
   education?: string;
   experience?: string;
   languages?: string;
@@ -33,7 +34,7 @@ export const getTalentProfile = async (): Promise<{
   data: TalentProfile;
 }> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/talents/talentProfile`, {
+    const response = await fetch(`${API_BASE_URL}/api/talents/talentProfile`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -57,7 +58,7 @@ export const updateTalentProfile = async (
   profileData: UpdateProfileData,
 ): Promise<{ message: string }> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/talents/talentProfile`, {
+    const response = await fetch(`${API_BASE_URL}/api/talents/talentProfile`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -81,7 +82,7 @@ export const updateTalentProfile = async (
 // Get token balance
 export const getTokenBalance = async (): Promise<{ balance: number }> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/talents/tokeBalance`, {
+    const response = await fetch(`${API_BASE_URL}/api/talents/tokenBalance`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -105,7 +106,7 @@ export const addSkills = async (
   skill_name: string,
 ): Promise<{ message: string }> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/talents/addSkills`, {
+    const response = await fetch(`${API_BASE_URL}/api/talents/addSkills`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -129,7 +130,7 @@ export const addSkills = async (
 // Get portfolio
 export const getPortfolio = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/talents/portifolio`, {
+    const response = await fetch(`${API_BASE_URL}/api/talents/portfolio`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -151,7 +152,7 @@ export const getPortfolio = async () => {
 // Create portfolio
 export const createPortfolio = async (portfolioData: any) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/talents/portifolio`, {
+    const response = await fetch(`${API_BASE_URL}/api/talents/portfolio`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -175,14 +176,17 @@ export const createPortfolio = async (portfolioData: any) => {
 // Update portfolio
 export const updatePortfolio = async (portfolioData: any) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/talents/updatePortifolio`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        ...getAuthHeaders(),
+    const response = await fetch(
+      `${API_BASE_URL}/api/talents/updatePortfolio`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(portfolioData),
       },
-      body: JSON.stringify(portfolioData),
-    });
+    );
 
     if (!response.ok) {
       const error = await response.json();
@@ -199,13 +203,16 @@ export const updatePortfolio = async (portfolioData: any) => {
 // Delete portfolio
 export const deletePortfolio = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/talents/deletePortifolio`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        ...getAuthHeaders(),
+    const response = await fetch(
+      `${API_BASE_URL}/api/talents/deletePortfolio`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
       },
-    });
+    );
 
     if (!response.ok) {
       const error = await response.json();

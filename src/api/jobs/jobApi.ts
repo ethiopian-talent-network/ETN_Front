@@ -1,15 +1,20 @@
-import type {
-  Job,
-  JobFilters,
-  ApplicationDetails,
-  FormData,
-} from "../../features/dashboard/types";
-import { API_BASE_URL } from "../../config/api";
+import type { Job } from "../../features/dashboard/types";
+import { API_BASE_URL, validateApiConfig } from "../../config/api";
 
 // Helper function to get auth headers
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Validate API configuration before making requests
+const checkApiConfig = () => {
+  const validation = validateApiConfig();
+  if (!validation.valid) {
+    console.error("API Configuration Error:", validation.error);
+    throw new Error(`API Configuration Error: ${validation.error}`);
+  }
+  return true;
 };
 
 export interface JobFilters {
@@ -35,10 +40,11 @@ export interface JobResponse {
 }
 
 // Get all jobs with filtering and pagination
-export const getAllJobs = async (
-  filters: JobFilters = {},
-): Promise<JobResponse> => {
+export const getAllJobs = async (filters: any = {}): Promise<JobResponse> => {
   try {
+    // Validate API configuration before making request
+    checkApiConfig();
+
     const params = new URLSearchParams();
 
     // Add filters to query params
@@ -250,7 +256,7 @@ export const unsaveJob = async (jobId: number): Promise<void> => {
 };
 
 // Get jobs by section (for dashboard)
-export const getJobsBySection = async (section: JobSection): Promise<Job[]> => {
+export const getJobsBySection = async (section: string): Promise<Job[]> => {
   try {
     switch (section) {
       case "best-matches":
@@ -293,7 +299,7 @@ export const applyToJob = async (
   coverLetter: string,
 ): Promise<void> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/talent/apply`, {
+    const response = await fetch(`${API_BASE_URL}/api/talents/apply`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

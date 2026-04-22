@@ -42,6 +42,13 @@ export interface ProfileData {
   education: Education[];
   certifications: Certification[];
   portfolio: Portfolio[];
+  about?: string;
+  educationText?: string;
+  experience?: string;
+  languagesText?: string;
+  linkedin?: string;
+  github?: string;
+  resume_url?: string;
 }
 
 export type ProfileSection = "overview" | "skills" | "portfolio" | "education";

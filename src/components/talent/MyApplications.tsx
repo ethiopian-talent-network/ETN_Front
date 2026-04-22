@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
-import { useDarkMode } from "../contexts/DarkModeContext";
+import { useDarkMode } from "../../contexts/DarkModeContext";
 import {
   Clock,
   DollarSign,
@@ -13,27 +13,34 @@ import {
   Briefcase,
   Search,
 } from "lucide-react";
+import { getUserApplications } from "../../api/jobs/jobApi";
 
-type ApplicationStatus = "pending" | "accepted" | "rejected" | "reviewed";
+type ApplicationStatus = "pending" | "accepted" | "rejected" | "shortlisted";
 
 interface Application {
   id: number;
-  job: {
-    id: number;
-    title: string;
-    company: string;
-    location: string;
-    salary: string;
-    budget_type: string;
-    experience: string;
-  };
-  status: ApplicationStatus;
-  submitted_at: string;
+  job_id: number;
   cover_letter: string;
-  proposal?: string;
-  estimated_timeline?: string;
-  budget_proposal?: string;
-  token_cost: number;
+  status: ApplicationStatus;
+  applied_at: string;
+  updated_at: string;
+  tokens_used: number;
+  proposal: string;
+  job_title: string;
+  job_salary: string;
+  job_salary_type: string;
+  company_name: string;
+  company_location: string;
+}
+
+interface ApplicationsResponse {
+  applications: Application[];
+  pagination: {
+    current: number;
+    pageSize: number;
+    total: number;
+    pages: number;
+  };
 }
 
 const statusColors = {
@@ -42,94 +49,58 @@ const statusColors = {
   accepted:
     "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
   rejected: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-  reviewed: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  shortlisted:
+    "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
 };
 
 const statusIcons = {
   pending: Hourglass,
   accepted: CheckCircle,
   rejected: XCircle,
-  reviewed: Clock,
+  shortlisted: Clock,
 };
 
 export default function MyApplications() {
   const { darkMode } = useDarkMode();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<ApplicationStatus | "all">("all");
   const [search, setSearch] = useState("");
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+    pages: 0,
+  });
 
-  // Mock data - replace with actual API call
   useEffect(() => {
-    const mockApplications: Application[] = [
-      {
-        id: 1,
-        job: {
-          id: 1,
-          title: "Senior React Developer",
-          company: "TechCorp Inc",
-          location: "Remote",
-          salary: "$80,000 - $120,000",
-          budget_type: "annual",
-          experience: "Senior",
-        },
-        status: "pending",
-        submitted_at: "2024-04-15T10:30:00Z",
-        cover_letter:
-          "I am excited to apply for this position as I have 5 years of experience...",
-        token_cost: 5,
-      },
-      {
-        id: 2,
-        job: {
-          id: 2,
-          title: "Full Stack Developer",
-          company: "StartupXYZ",
-          location: "New York, NY",
-          salary: "$90,000 - $130,000",
-          budget_type: "annual",
-          experience: "Mid-Senior",
-        },
-        status: "accepted",
-        submitted_at: "2024-04-10T14:20:00Z",
-        cover_letter:
-          "With my extensive experience in both frontend and backend...",
-        proposal:
-          "I propose to build the application using React and Node.js...",
-        estimated_timeline: "3 months",
-        budget_proposal: "$100,000",
-        token_cost: 5,
-      },
-      {
-        id: 3,
-        job: {
-          id: 3,
-          title: "UI/UX Designer",
-          company: "DesignHub",
-          location: "Remote",
-          salary: "$60,000 - $90,000",
-          budget_type: "annual",
-          experience: "Mid",
-        },
-        status: "rejected",
-        submitted_at: "2024-04-05T09:15:00Z",
-        cover_letter: "As a passionate designer with 3 years of experience...",
-        token_cost: 3,
-      },
-    ];
+    fetchApplications();
+  }, [pagination.current]);
 
-    setTimeout(() => {
-      setApplications(mockApplications);
+  const fetchApplications = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response: ApplicationsResponse = await getUserApplications({
+        page: pagination.current,
+        limit: pagination.pageSize,
+      });
+      setApplications(response.applications);
+      setPagination(response.pagination);
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch applications");
+    } finally {
       setLoading(false);
-    }, 1000);
-  }, []);
+    }
+  };
 
   const filteredApplications = applications.filter((app) => {
     const matchesFilter = filter === "all" || app.status === filter;
     const matchesSearch =
       search === "" ||
-      app.job.title.toLowerCase().includes(search.toLowerCase()) ||
-      app.job.company.toLowerCase().includes(search.toLowerCase());
+      app.job_title.toLowerCase().includes(search.toLowerCase()) ||
+      app.company_name.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -198,6 +169,13 @@ export default function MyApplications() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        )}
+
         {/* Page Header */}
         <div className="mb-8">
           <h1
@@ -222,7 +200,7 @@ export default function MyApplications() {
             }`}
           >
             <div className="text-2xl font-bold text-[#0084ca]">
-              {applications.length}
+              {pagination.total}
             </div>
             <div
               className={`text-sm ${
@@ -424,14 +402,14 @@ export default function MyApplications() {
                               darkMode ? "text-white" : "text-gray-900"
                             }`}
                           >
-                            {application.job.title}
+                            {application.job_title}
                           </h3>
                           <p
                             className={`text-sm mb-2 ${
                               darkMode ? "text-gray-400" : "text-gray-600"
                             }`}
                           >
-                            {application.job.company}
+                            {application.company_name}
                           </p>
                           <div className="flex flex-wrap gap-4 text-sm">
                             <div
@@ -440,7 +418,7 @@ export default function MyApplications() {
                               }`}
                             >
                               <MapPin className="w-4 h-4" />
-                              {application.job.location}
+                              {application.company_location}
                             </div>
                             <div
                               className={`flex items-center gap-1 ${
@@ -448,7 +426,7 @@ export default function MyApplications() {
                               }`}
                             >
                               <DollarSign className="w-4 h-4" />
-                              {application.job.salary}
+                              {application.job_salary}
                             </div>
                             <div
                               className={`flex items-center gap-1 ${
@@ -456,7 +434,7 @@ export default function MyApplications() {
                               }`}
                             >
                               <Calendar className="w-4 h-4" />
-                              Applied {formatDate(application.submitted_at)}
+                              Applied {formatDate(application.applied_at)}
                             </div>
                           </div>
                         </div>
@@ -488,7 +466,7 @@ export default function MyApplications() {
                           darkMode ? "text-gray-400" : "text-gray-500"
                         }`}
                       >
-                        {application.token_cost} tokens spent
+                        {application.tokens_used} tokens spent
                       </div>
                     </div>
                   </div>

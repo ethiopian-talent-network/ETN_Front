@@ -1,135 +1,52 @@
 import type { ProfileData, ProfileStats } from "../../types/profile";
+import { API_BASE_URL } from "../../config/api";
 
-// Local storage keys
-const PROFILE_STORAGE_KEY = "freelancer_profile";
-const STATS_STORAGE_KEY = "freelancer_stats";
-
-// Helper function to check if localStorage is available
-const isLocalStorageAvailable = (): boolean => {
-  try {
-    const test = "__storage_test__";
-    localStorage.setItem(test, test);
-    localStorage.removeItem(test);
-    return true;
-  } catch {
-    return false;
-  }
+// Helper function to get auth headers
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 export const profileApi = {
-  // Get profile data from local storage
+  // Get profile data from backend
   async getProfile(): Promise<ProfileData> {
     try {
-      if (!isLocalStorageAvailable()) {
-        console.warn("localStorage is not available, returning empty profile");
-        return {
-          name: "",
-          title: "",
-          location: "",
-          hourlyRate: "",
-          bio: "",
-          skills: [],
-          languages: [],
-          education: [],
-          certifications: [],
-          portfolio: [],
-        };
+      const response = await fetch(
+        `${API_BASE_URL}/api/talents/talentProfile`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
-      if (storedProfile) {
-        return JSON.parse(storedProfile);
-      }
-
-      // Return empty profile if no stored data
-      return {
-        name: "",
-        title: "",
-        location: "",
-        hourlyRate: "",
-        bio: "",
-        skills: [],
-        languages: [],
-        education: [],
-        certifications: [],
-        portfolio: [],
-      };
+      const result = await response.json();
+      return result.data || result;
     } catch (error) {
-      console.error("Error loading profile from storage:", error);
-      // Return empty profile as fallback
-      return {
-        name: "",
-        title: "",
-        location: "",
-        hourlyRate: "",
-        bio: "",
-        skills: [],
-        languages: [],
-        education: [],
-        certifications: [],
-        portfolio: [],
-      };
+      console.error("Error fetching profile:", error);
+      throw error;
     }
   },
 
-  // Update profile data
-  async updateProfile(data: Partial<ProfileData>): Promise<ProfileData> {
-    try {
-      if (!isLocalStorageAvailable()) {
-        console.warn("localStorage is not available, cannot update profile");
-        throw new Error("localStorage is not available");
-      }
-
-      const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
-      if (storedProfile) {
-        const updatedProfile = { ...JSON.parse(storedProfile), ...data };
-        localStorage.setItem(
-          PROFILE_STORAGE_KEY,
-          JSON.stringify(updatedProfile),
-        );
-        return updatedProfile;
-      }
-
-      // If no stored profile, create a new one
-      const newProfile: ProfileData = {
-        name: "",
-        title: "",
-        location: "",
-        hourlyRate: "",
-        bio: "",
-        skills: [],
-        languages: [],
-        education: [],
-        certifications: [],
-        portfolio: [],
-        ...data,
-      };
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(newProfile));
-      return newProfile;
-    } catch (error) {
-      console.error("Error updating profile in storage:", error);
-      throw new Error("Failed to update profile");
-    }
-  },
-
-  // Upload profile image (mock implementation)
-  async uploadProfileImage(file: File): Promise<{ imageUrl: string }> {
-    try {
-      // In a real app, this would upload to a server
-      // For now, we'll create a mock URL
-      const imageUrl = URL.createObjectURL(file);
-      return { imageUrl };
-    } catch (error) {
-      console.error("Error uploading profile image:", error);
-      throw new Error("Failed to upload image");
-    }
-  },
-
-  // Get profile stats from local storage
+  // Get profile stats from backend
   async getProfileStats(): Promise<ProfileStats> {
     try {
-      if (!isLocalStorageAvailable()) {
-        console.warn("localStorage is not available, returning default stats");
+      const response = await fetch(`${API_BASE_URL}/api/talents/stats`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+      });
+
+      if (!response.ok) {
+        // If stats endpoint doesn't exist, return default stats
         return {
           completedProjects: 0,
           totalEarnings: "$0",
@@ -138,20 +55,11 @@ export const profileApi = {
         };
       }
 
-      const storedStats = localStorage.getItem(STATS_STORAGE_KEY);
-      if (storedStats) {
-        return JSON.parse(storedStats);
-      }
-
-      // Return default stats if no stored data
-      return {
-        completedProjects: 0,
-        totalEarnings: "$0",
-        successRate: "N/A",
-        responseTime: "N/A",
-      };
+      const result = await response.json();
+      return result.data || result;
     } catch (error) {
-      console.error("Error loading profile stats from storage:", error);
+      console.error("Error fetching profile stats:", error);
+      // Return default stats on error
       return {
         completedProjects: 0,
         totalEarnings: "$0",
@@ -161,284 +69,260 @@ export const profileApi = {
     }
   },
 
-  // Add skill to local storage
+  // Update profile data
+  async updateProfile(data: Partial<ProfileData>): Promise<ProfileData> {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/talents/talentProfile`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
+          body: JSON.stringify(data),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result.data || result;
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      throw error;
+    }
+  },
+
+  // Upload profile image (mock implementation)
+  async uploadProfileImage(file: File): Promise<{ imageUrl: string }> {
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch(`${API_BASE_URL}/api/talents/upload-image`, {
+        method: "POST",
+        headers: {
+          ...getAuthHeaders(),
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error("Error uploading profile image:", error);
+      throw new Error("Failed to upload image");
+    }
+  },
+
+  // Add skill
   async addSkill(skill: string): Promise<ProfileData> {
     try {
-      if (!isLocalStorageAvailable()) {
-        console.warn("localStorage is not available, cannot add skill");
-        throw new Error("localStorage is not available");
+      const response = await fetch(`${API_BASE_URL}/api/talents/skills`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ skill }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
-      const profile = storedProfile
-        ? JSON.parse(storedProfile)
-        : {
-            name: "",
-            title: "",
-            location: "",
-            hourlyRate: "",
-            bio: "",
-            skills: [],
-            languages: [],
-            education: [],
-            certifications: [],
-            portfolio: [],
-          };
-
-      // Add skill if it doesn't already exist
-      if (!profile.skills.includes(skill)) {
-        profile.skills.push(skill);
-        localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-      }
-
-      return profile;
+      const result = await response.json();
+      return result.data || result;
     } catch (error) {
-      console.error("Error adding skill to storage:", error);
-      throw new Error("Failed to add skill");
+      console.error("Error adding skill:", error);
+      throw error;
     }
   },
 
-  // Remove skill from local storage
+  // Remove skill
   async removeSkill(skill: string): Promise<ProfileData> {
     try {
-      if (!isLocalStorageAvailable()) {
-        console.warn("localStorage is not available, cannot remove skill");
-        throw new Error("localStorage is not available");
+      const response = await fetch(`${API_BASE_URL}/api/talents/skills`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ skill }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
-      if (!storedProfile) {
-        throw new Error("No profile found");
-      }
-
-      const profile = JSON.parse(storedProfile);
-      profile.skills = profile.skills.filter((s: string) => s !== skill);
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-      return profile;
+      const result = await response.json();
+      return result.data || result;
     } catch (error) {
-      console.error("Error removing skill from storage:", error);
-      throw new Error("Failed to remove skill");
+      console.error("Error removing skill:", error);
+      throw error;
     }
   },
 
-  // Add portfolio item to local storage
+  // Add portfolio item
   async addPortfolioItem(
     item: Omit<import("../../types/profile").Portfolio, "id">,
   ): Promise<ProfileData> {
     try {
-      if (!isLocalStorageAvailable()) {
-        console.warn(
-          "localStorage is not available, cannot add portfolio item",
-        );
-        throw new Error("localStorage is not available");
+      const response = await fetch(`${API_BASE_URL}/api/talents/portfolio`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(item),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
-      const profile = storedProfile
-        ? JSON.parse(storedProfile)
-        : {
-            name: "",
-            title: "",
-            location: "",
-            hourlyRate: "",
-            bio: "",
-            skills: [],
-            languages: [],
-            education: [],
-            certifications: [],
-            portfolio: [],
-          };
-
-      // Add portfolio item with generated ID
-      const newItem = { ...item, id: Date.now() };
-      profile.portfolio.push(newItem);
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-      return profile;
+      const result = await response.json();
+      return result.data || result;
     } catch (error) {
-      console.error("Error adding portfolio item to storage:", error);
-      throw new Error("Failed to add portfolio item");
+      console.error("Error adding portfolio item:", error);
+      throw error;
     }
   },
 
-  // Remove portfolio item from local storage
+  // Remove portfolio item
   async removePortfolioItem(itemId: number): Promise<ProfileData> {
     try {
-      if (!isLocalStorageAvailable()) {
-        console.warn(
-          "localStorage is not available, cannot remove portfolio item",
-        );
-        throw new Error("localStorage is not available");
-      }
-
-      const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
-      if (!storedProfile) {
-        throw new Error("No profile found");
-      }
-
-      const profile = JSON.parse(storedProfile);
-      profile.portfolio = profile.portfolio.filter(
-        (item: any) => item.id !== itemId,
+      const response = await fetch(
+        `${API_BASE_URL}/api/talents/portfolio/${itemId}`,
+        {
+          method: "DELETE",
+          headers: {
+            ...getAuthHeaders(),
+          },
+        },
       );
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-      return profile;
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result.data || result;
     } catch (error) {
-      console.error("Error removing portfolio item from storage:", error);
-      throw new Error("Failed to remove portfolio item");
+      console.error("Error removing portfolio item:", error);
+      throw error;
     }
   },
 
-  // Add education to local storage
+  // Add education
   async addEducation(
     education: Omit<import("../../types/profile").Education, "id">,
   ): Promise<ProfileData> {
     try {
-      if (!isLocalStorageAvailable()) {
-        console.warn("localStorage is not available, cannot add education");
-        throw new Error("localStorage is not available");
+      const response = await fetch(`${API_BASE_URL}/api/talents/education`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(education),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
-      const profile = storedProfile
-        ? JSON.parse(storedProfile)
-        : {
-            name: "",
-            title: "",
-            location: "",
-            hourlyRate: "",
-            bio: "",
-            skills: [],
-            languages: [],
-            education: [],
-            certifications: [],
-            portfolio: [],
-          };
-
-      // Add education with generated ID
-      const newEducation = { ...education, id: Date.now() };
-      profile.education.push(newEducation);
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-      return profile;
+      const result = await response.json();
+      return result.data || result;
     } catch (error) {
-      console.error("Error adding education to storage:", error);
-      throw new Error("Failed to add education");
+      console.error("Error adding education:", error);
+      throw error;
     }
   },
 
-  // Remove education from local storage
+  // Remove education
   async removeEducation(itemId: number): Promise<ProfileData> {
     try {
-      if (!isLocalStorageAvailable()) {
-        console.warn("localStorage is not available, cannot remove education");
-        throw new Error("localStorage is not available");
-      }
-
-      const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
-      if (!storedProfile) {
-        throw new Error("No profile found");
-      }
-
-      const profile = JSON.parse(storedProfile);
-      profile.education = profile.education.filter(
-        (item: any) => item.id !== itemId,
+      const response = await fetch(
+        `${API_BASE_URL}/api/talents/education/${itemId}`,
+        {
+          method: "DELETE",
+          headers: {
+            ...getAuthHeaders(),
+          },
+        },
       );
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-      return profile;
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result.data || result;
     } catch (error) {
-      console.error("Error removing education from storage:", error);
-      throw new Error("Failed to remove education");
+      console.error("Error removing education:", error);
+      throw error;
     }
   },
 
-  // Add certification to local storage
+  // Add certification
   async addCertification(
     certification: Omit<import("../../types/profile").Certification, "id">,
   ): Promise<ProfileData> {
     try {
-      if (!isLocalStorageAvailable()) {
-        console.warn("localStorage is not available, cannot add certification");
-        throw new Error("localStorage is not available");
+      const response = await fetch(
+        `${API_BASE_URL}/api/talents/certifications`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
+          body: JSON.stringify(certification),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
-      const profile = storedProfile
-        ? JSON.parse(storedProfile)
-        : {
-            name: "",
-            title: "",
-            location: "",
-            hourlyRate: "",
-            bio: "",
-            skills: [],
-            languages: [],
-            education: [],
-            certifications: [],
-            portfolio: [],
-          };
-
-      // Add certification with generated ID
-      const newCertification = { ...certification, id: Date.now() };
-      profile.certifications.push(newCertification);
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-      return profile;
+      const result = await response.json();
+      return result.data || result;
     } catch (error) {
-      console.error("Error adding certification to storage:", error);
-      throw new Error("Failed to add certification");
+      console.error("Error adding certification:", error);
+      throw error;
     }
   },
 
-  // Remove certification from local storage
+  // Remove certification
   async removeCertification(itemId: number): Promise<ProfileData> {
     try {
-      if (!isLocalStorageAvailable()) {
-        console.warn(
-          "localStorage is not available, cannot remove certification",
-        );
-        throw new Error("localStorage is not available");
-      }
-
-      const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
-      if (!storedProfile) {
-        throw new Error("No profile found");
-      }
-
-      const profile = JSON.parse(storedProfile);
-      profile.certifications = profile.certifications.filter(
-        (item: any) => item.id !== itemId,
+      const response = await fetch(
+        `${API_BASE_URL}/api/talents/certifications/${itemId}`,
+        {
+          method: "DELETE",
+          headers: {
+            ...getAuthHeaders(),
+          },
+        },
       );
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-      return profile;
-    } catch (error) {
-      console.error("Error removing certification from storage:", error);
-      throw new Error("Failed to remove certification");
-    }
-  },
 
-  // Upload document (mock implementation)
-  async uploadDocument(
-    file: File,
-    _type: "certificate" | "transcript",
-    _itemId: number,
-  ): Promise<{ documentUrl: string }> {
-    try {
-      // In a real app, this would upload to a server
-      // For now, we'll create a mock URL
-      const documentUrl = URL.createObjectURL(file);
-      return { documentUrl };
-    } catch (error) {
-      console.error("Error uploading document:", error);
-      throw new Error("Failed to upload document");
-    }
-  },
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-  // Delete document (mock implementation)
-  async deleteDocument(documentId: number): Promise<void> {
-    try {
-      // In a real app, this would delete from server
-      // For now, we'll just log the action
-      console.log(`Document ${documentId} deleted (mock implementation)`);
+      const result = await response.json();
+      return result.data || result;
     } catch (error) {
-      console.error("Error deleting document:", error);
-      throw new Error("Failed to delete document");
+      console.error("Error removing certification:", error);
+      throw error;
     }
   },
 
@@ -447,39 +331,81 @@ export const profileApi = {
     languages: import("../../types/profile").Language[],
   ): Promise<ProfileData> {
     try {
-      if (!isLocalStorageAvailable()) {
-        console.warn("localStorage is not available, cannot update languages");
-        throw new Error("localStorage is not available");
+      const response = await fetch(`${API_BASE_URL}/api/talents/languages`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ languages }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
-      if (storedProfile) {
-        const updatedProfile = { ...JSON.parse(storedProfile), languages };
-        localStorage.setItem(
-          PROFILE_STORAGE_KEY,
-          JSON.stringify(updatedProfile),
-        );
-        return updatedProfile;
-      }
-
-      // If no stored profile, create a new one with languages
-      const newProfile: ProfileData = {
-        name: "",
-        title: "",
-        location: "",
-        hourlyRate: "",
-        bio: "",
-        skills: [],
-        languages,
-        education: [],
-        certifications: [],
-        portfolio: [],
-      };
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(newProfile));
-      return newProfile;
+      const result = await response.json();
+      return result.data || result;
     } catch (error) {
-      console.error("Error updating languages in storage:", error);
-      throw new Error("Failed to update languages");
+      console.error("Error updating languages:", error);
+      throw error;
+    }
+  },
+
+  // Upload document (certificate or transcript)
+  async uploadDocument(
+    file: File,
+    type: "certificate" | "transcript",
+    itemId: number,
+  ): Promise<ProfileData> {
+    try {
+      const formData = new FormData();
+      formData.append("document", file);
+      formData.append("type", type);
+      formData.append("itemId", itemId.toString());
+
+      const response = await fetch(`${API_BASE_URL}/api/talents/documents`, {
+        method: "POST",
+        headers: {
+          ...getAuthHeaders(),
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result.data || result;
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      throw error;
+    }
+  },
+
+  // Delete document
+  async deleteDocument(documentId: number): Promise<ProfileData> {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/talents/documents/${documentId}`,
+        {
+          method: "DELETE",
+          headers: {
+            ...getAuthHeaders(),
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result.data || result;
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      throw error;
     }
   },
 };

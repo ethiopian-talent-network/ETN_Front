@@ -9,7 +9,8 @@ import MessagingPage from "./features/messaging/MessagingPage";
 import JobPosting from "./pages/JobPosting";
 import FreelancerPublicProfile from "./pages/talentPublicProfile";
 import TalentProfile from "./pages/talentProfile";
-import MyApplications from "./pages/MyApplications";
+import MyApplications from "./components/talent/MyApplications";
+import Billing from "./components/talent/Billing";
 import JobApplications from "./pages/JobApplications";
 import ApplyToJob from "./pages/ApplyToJob";
 import { DarkModeProvider } from "./contexts/DarkModeContext";
@@ -81,6 +82,14 @@ function App() {
               <Route
                 path={TALENT_ROUTES.APPLY_JOB.path}
                 element={<ApplyToJob />}
+              />
+              <Route
+                path={TALENT_ROUTES.BILLING.path}
+                element={
+                  <ProtectedRoute allowedRoles={["talent"]}>
+                    <Billing />
+                  </ProtectedRoute>
+                }
               />
 
               {/* Shared routes - Both talent and employer */}

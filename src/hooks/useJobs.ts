@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { jobService } from "../api/jobs/jobService";
+import { getUserApplications } from "../api/jobs/jobApi";
 import type { Job, JobSection } from "../features/dashboard/types";
 import type { JobFilters } from "../api/jobs/jobApi";
 
@@ -45,6 +46,17 @@ export function useJobs(options: UseJobsOptions = {}): UseJobsReturn {
   const [pagination, setPagination] =
     useState<UseJobsReturn["pagination"]>(null);
 
+  // Fetch user applications to mark applied jobs
+  const fetchApplications = useCallback(async () => {
+    try {
+      const response = await getUserApplications({ page: 1, limit: 100 });
+      return response.applications;
+    } catch (err) {
+      console.error("Error fetching applications:", err);
+      return [];
+    }
+  }, []);
+
   // Fetch jobs by section
   const fetchJobs = useCallback(
     async (jobSection?: JobSection) => {
@@ -55,7 +67,21 @@ export function useJobs(options: UseJobsOptions = {}): UseJobsReturn {
 
       try {
         const fetchedJobs = await jobService.getJobsBySection(targetSection);
-        setJobs(fetchedJobs);
+
+        // Fetch applications and mark jobs as applied
+        const applications = await fetchApplications();
+        const appliedJobIds = applications.map((app) => app.job_id);
+
+        // Update job status based on applications
+        const updatedJobs = fetchedJobs.map((job) => {
+          const isApplied = appliedJobIds.includes(job.id);
+          return {
+            ...job,
+            status: isApplied ? "applied" : job.status,
+          };
+        });
+
+        setJobs(updatedJobs);
         setPagination(null); // Section-based jobs don't have pagination
       } catch (err) {
         const errorMessage =
@@ -66,7 +92,7 @@ export function useJobs(options: UseJobsOptions = {}): UseJobsReturn {
         setLoading(false);
       }
     },
-    [section],
+    [section, fetchApplications],
   );
 
   // Search jobs

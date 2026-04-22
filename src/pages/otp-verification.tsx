@@ -4,6 +4,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { useSearchParams } from "react-router";
 import axios from "axios";
+import { API_BASE_URL } from "../config/api";
 
 export default function OtpVerification() {
   const [searchParams] = useSearchParams();
@@ -21,9 +22,9 @@ export default function OtpVerification() {
     setMessage("");
 
     try {
-      const response = await axios.post("http://localhost:5000/auth/verify-otp", {
-        email:email,
-        otp:otp,
+      const response = await axios.post(`${API_BASE_URL}/api/auth/verify-otp`, {
+        email: email,
+        otp: otp,
       });
 
       setMessage(response.data.message);
@@ -43,7 +44,7 @@ export default function OtpVerification() {
     setMessage("");
 
     try {
-      const response = await axios.post("http://localhost:5000/auth/resend-otp", {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/resend-otp`, {
         email,
       });
 
@@ -69,7 +70,9 @@ export default function OtpVerification() {
           {/* Logo */}
           <div className="mb-8">
             <h1 className="text-[#0084ca] font-bold text-3xl">ETN</h1>
-            <p className="text-sm text-gray-600 mt-1">Ethiopian Talent Network</p>
+            <p className="text-sm text-gray-600 mt-1">
+              Ethiopian Talent Network
+            </p>
           </div>
 
           {/* Title */}
@@ -97,7 +100,10 @@ export default function OtpVerification() {
           {/* OTP Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="otp" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="otp"
+                className="text-sm font-medium text-gray-700"
+              >
                 Enter 6-digit code
               </Label>
               <Input
@@ -127,7 +133,9 @@ export default function OtpVerification() {
                 disabled={isResending}
                 className="text-sm text-[#0084ca] hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isResending ? "Resending..." : "Didn't receive the code? Resend"}
+                {isResending
+                  ? "Resending..."
+                  : "Didn't receive the code? Resend"}
               </button>
             </div>
 
@@ -146,28 +154,57 @@ export default function OtpVerification() {
       {/* Right side - Image/Illustration */}
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-[#0084ca] to-[#006ba6] items-center justify-center p-12">
         <div className="text-white max-w-lg">
-          <h2 className="text-4xl font-bold mb-6">
-            Verify your email address
-          </h2>
+          <h2 className="text-4xl font-bold mb-6">Verify your email address</h2>
           <p className="text-xl text-white/90 mb-8">
-            We need to make sure you're the owner of this email address to keep your account secure.
+            We need to make sure you're the owner of this email address to keep
+            your account secure.
           </p>
           <div className="space-y-4">
             <div className="flex items-start">
-              <svg className="w-6 h-6 mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="w-6 h-6 mr-3 mt-1 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               <p className="text-lg">Keep your account secure</p>
             </div>
             <div className="flex items-start">
-              <svg className="w-6 h-6 mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <svg
+                className="w-6 h-6 mr-3 mt-1 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
               </svg>
               <p className="text-lg">Receive important notifications</p>
             </div>
             <div className="flex items-start">
-              <svg className="w-6 h-6 mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <svg
+                className="w-6 h-6 mr-3 mt-1 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
               </svg>
               <p className="text-lg">Protect your personal information</p>
             </div>

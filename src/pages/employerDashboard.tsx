@@ -1,9 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import DropdownMenu from "../components/ui/DropdownMenu";
 import { useDarkMode } from "../contexts/DarkModeContext";
+import { useAuth } from "../contexts/AuthContext";
+import {
+  getEmployerJobs,
+  createJob,
+  updateJob,
+  deleteJob,
+  getJobApplications,
+  updateApplicationStatus,
+  type Job,
+  type JobFormData,
+  type Applicant,
+} from "../api/employer/employerApi";
+import { getCategories, type Category } from "../api/categories/categoriesApi";
 import {
   Search,
   Plus,
@@ -29,37 +42,9 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-interface Job {
-  id: number;
-  title: string;
-  description: string;
-  category: string;
-  experience: string;
-  budget: string;
-  duration: string;
-  location: string;
-  remote: boolean;
-  posted: string;
-  proposals: number;
-  status: "active" | "draft" | "closed" | "paused";
-  skills: string[];
-  applicants: Applicant[];
-}
-
-interface Applicant {
-  id: number;
-  name: string;
-  avatar: string;
-  rating: number;
-  proposals: number;
-  earnings: string;
-  match: number;
-  applied: string;
-  status: "pending" | "reviewed" | "shortlisted" | "rejected" | "hired";
-}
-
 export default function EmployerDashboard() {
   const { darkMode, toggleDarkMode } = useDarkMode();
+  const { token } = useAuth();
   const [activeTab, setActiveTab] = useState<
     "jobs" | "talent" | "contracts" | "messages"
   >("jobs");
@@ -71,114 +56,78 @@ export default function EmployerDashboard() {
   const [jobFilter, setJobFilter] = useState<
     "all" | "active" | "draft" | "closed"
   >("all");
+  const [categories, setCategories] = useState<Category[]>([]);
 
-  const [jobs, setJobs] = useState<Job[]>([
-    {
-      id: 1,
-      title: "Senior React Developer for E-commerce Platform",
-      description:
-        "Looking for an experienced React developer to build a modern SaaS dashboard with TypeScript and Tailwind CSS. The project involves creating a comprehensive e-commerce management system.",
-      category: "Web Development",
-      experience: "Senior",
-      budget: "$3,000 - $5,000",
-      duration: "1-3 months",
-      location: "Addis Ababa",
-      remote: true,
-      posted: "2 days ago",
-      proposals: 12,
-      status: "active",
-      skills: ["React", "TypeScript", "Tailwind CSS", "Node.js", "MongoDB"],
-      applicants: [
-        {
-          id: 1,
-          name: "Yohannes Tadesse",
-          avatar:
-            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",
-          rating: 4.9,
-          proposals: 45,
-          earnings: "$12,500",
-          match: 95,
-          applied: "2 hours ago",
-          status: "pending",
-        },
-        {
-          id: 2,
-          name: "Sara Mohammed",
-          avatar:
-            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",
-          rating: 4.7,
-          proposals: 32,
-          earnings: "$8,900",
-          match: 88,
-          applied: "5 hours ago",
-          status: "reviewed",
-        },
-      ],
-    },
-    {
-      id: 2,
-      title: "UI/UX Designer for Mobile Banking App",
-      description:
-        "Need a talented UI/UX designer to create a modern mobile app design for our fintech startup. Great fit for your design skills! The app will serve thousands of Ethiopian users.",
-      category: "Design",
-      experience: "Mid",
-      budget: "$1,500 - $2,500",
-      duration: "2-4 weeks",
-      location: "Addis Ababa",
-      remote: true,
-      posted: "5 days ago",
-      proposals: 8,
-      status: "active",
-      skills: [
-        "Figma",
-        "Adobe XD",
-        "Mobile Design",
-        "Prototyping",
-        "User Research",
-      ],
-      applicants: [
-        {
-          id: 3,
-          name: "Meron Alemayehu",
-          avatar:
-            "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100",
-          rating: 5.0,
-          proposals: 28,
-          earnings: "$6,200",
-          match: 92,
-          applied: "1 day ago",
-          status: "shortlisted",
-        },
-      ],
-    },
-    {
-      id: 3,
-      title: "Full Stack Developer - Healthcare Platform",
-      description:
-        "Seeking a full stack developer for healthcare platform development with modern tech stack. Must have experience with HIPAA compliance.",
-      category: "Web Development",
-      experience: "Senior",
-      budget: "$4,000 - $6,000",
-      duration: "2-3 months",
-      location: "Bahir Dar",
-      remote: false,
-      posted: "1 week ago",
-      proposals: 6,
-      status: "draft",
-      skills: ["React", "Python", "Django", "PostgreSQL", "AWS"],
-      applicants: [],
-    },
-  ]);
+  // Proposals state
+  const [showProposalsModal, setShowProposalsModal] = useState(false);
+  const [selectedJobForProposals, setSelectedJobForProposals] = useState<
+    number | null
+  >(null);
+  const [proposals, setProposals] = useState<Applicant[]>([]);
+  const [proposalsLoading, setProposalsLoading] = useState(false);
+  const [proposalsError, setProposalsError] = useState<string | null>(null);
 
-  const [newJob, setNewJob] = useState<Partial<Job>>({
+  // API state
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<any>(null);
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  // Fetch jobs on component mount and when filter changes
+  useEffect(() => {
+    if (token) {
+      fetchJobs();
+    }
+  }, [token, jobFilter, searchQuery]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await getCategories();
+      setCategories(response.data);
+    } catch (err) {
+      console.error("Failed to fetch categories:", err);
+    }
+  };
+
+  const fetchJobs = async () => {
+    if (!token) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await getEmployerJobs(token, {
+        page: 1,
+        limit: 20,
+        status: jobFilter === "all" ? undefined : jobFilter,
+        search: searchQuery || undefined,
+      });
+
+      setJobs(response.jobs || []);
+      setPagination(response.pagination);
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch jobs");
+      console.error("Error fetching jobs:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [newJob, setNewJob] = useState<Partial<JobFormData>>({
     title: "",
     description: "",
-    category: "",
-    experience: "",
-    budget: "",
+    category_id: 0,
+    experience_level: "",
+    salary: "",
+    budget_type: "fixed",
     duration: "",
     location: "",
-    remote: false,
+    remote_allowed: false,
     skills: [],
   });
 
@@ -192,78 +141,168 @@ export default function EmployerDashboard() {
     reader.readAsDataURL(file);
   };
 
-  const handleCreateJob = () => {
-    if (editingJob) {
-      setJobs(
-        jobs.map((job) =>
-          job.id === editingJob.id
-            ? { ...editingJob, ...(newJob as Job) }
-            : job,
-        ),
-      );
-      setEditingJob(null);
-    } else {
-      const job: Job = {
-        id: jobs.length + 1,
-        title: newJob.title || "",
-        description: newJob.description || "",
-        category: newJob.category || "",
-        experience: newJob.experience || "",
-        budget: newJob.budget || "",
-        duration: newJob.duration || "",
-        location: newJob.location || "",
-        remote: newJob.remote || false,
-        posted: "Just now",
-        proposals: 0,
-        status: "draft",
-        skills: newJob.skills || [],
-        applicants: [],
-      };
-      setJobs([...jobs, job]);
-    }
-    setNewJob({
-      title: "",
-      description: "",
-      category: "",
-      experience: "",
-      budget: "",
-      duration: "",
-      location: "",
-      remote: false,
-      skills: [],
-    });
-    setShowJobForm(false);
+  // Map old experience level values to new database enum values
+  const mapExperienceLevel = (level: string) => {
+    const levelMap: { [key: string]: string } = {
+      Junior: "entry",
+      Mid: "intermediate",
+      Senior: "expert",
+    };
+    return levelMap[level] || level;
   };
 
-  const handleDeleteJob = (jobId: number) => {
-    setJobs(jobs.filter((job) => job.id !== jobId));
+  const handleCreateJob = async () => {
+    if (!token) return;
+
+    // Validate required fields
+    const requiredFields = [
+      { field: "title", message: "Job title is required" },
+      { field: "description", message: "Job description is required" },
+      {
+        field: "category_id",
+        message: "Category is required",
+        condition: (val: any) => val && val > 0,
+      },
+      { field: "experience_level", message: "Experience level is required" },
+      { field: "salary", message: "Salary is required" },
+      { field: "budget_type", message: "Budget type is required" },
+      { field: "duration", message: "Duration is required" },
+      { field: "location", message: "Location is required" },
+    ];
+
+    for (const { field, message, condition } of requiredFields) {
+      const value = newJob[field as keyof JobFormData];
+      const isValid = condition
+        ? condition(value)
+        : value && value.toString().trim() !== "";
+
+      if (!isValid) {
+        setError(message);
+        return;
+      }
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (editingJob) {
+        // Update existing job
+        await updateJob(token, editingJob.id, newJob as JobFormData);
+        setEditingJob(null);
+      } else {
+        // Create new job
+        const mappedJobData = {
+          ...newJob,
+          experience_level: mapExperienceLevel(newJob.experience_level || ""),
+        };
+        await createJob(token, mappedJobData as JobFormData);
+      }
+
+      // Refresh jobs list
+      await fetchJobs();
+
+      // Reset form
+      setNewJob({
+        title: "",
+        description: "",
+        category_id: 0,
+        experience_level: "",
+        salary: "",
+        budget_type: "fixed",
+        duration: "",
+        location: "",
+        remote_allowed: false,
+        skills: [],
+      });
+      setShowJobForm(false);
+    } catch (err: any) {
+      setError(err.message || "Failed to save job");
+      console.error("Error saving job:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteJob = async (jobId: number) => {
+    if (!token) return;
+
+    if (!confirm("Are you sure you want to delete this job?")) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      await deleteJob(token, jobId);
+
+      // Refresh jobs list
+      await fetchJobs();
+    } catch (err: any) {
+      setError(err.message || "Failed to delete job");
+      console.error("Error deleting job:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewProposals = async (jobId: number) => {
+    if (!token) return;
+
+    try {
+      setProposalsLoading(true);
+      setProposalsError(null);
+      setSelectedJobForProposals(jobId);
+      setShowProposalsModal(true);
+
+      const response = await getJobApplications(token, jobId);
+      setProposals(response.applications || []);
+    } catch (err: any) {
+      setProposalsError(err.message || "Failed to fetch proposals");
+      console.error("Error fetching proposals:", err);
+    } finally {
+      setProposalsLoading(false);
+    }
+  };
+
+  const handleUpdateApplicationStatus = async (
+    applicationId: number,
+    status: Applicant["status"],
+  ) => {
+    if (!token) return;
+
+    try {
+      await updateApplicationStatus(token, applicationId, status);
+
+      // Refresh proposals list
+      if (selectedJobForProposals) {
+        handleViewProposals(selectedJobForProposals);
+      }
+
+      // Refresh jobs list to update application counts
+      await fetchJobs();
+    } catch (err: any) {
+      setProposalsError(err.message || "Failed to update application status");
+      console.error("Error updating application status:", err);
+    }
   };
 
   const handleEditJob = (job: Job) => {
     setEditingJob(job);
-    setNewJob(job);
+    setNewJob({
+      title: job.title,
+      description: job.description,
+      category_id: job.category_id,
+      experience_level: job.experience_level,
+      salary: job.salary,
+      budget_type: job.budget_type,
+      duration: job.duration,
+      location: job.location,
+      remote_allowed: job.remote_allowed,
+      skills: job.skills,
+    });
     setShowJobForm(true);
-  };
-
-  const handleUpdateApplicantStatus = (
-    jobId: number,
-    applicantId: number,
-    status: Applicant["status"],
-  ) => {
-    setJobs(
-      jobs.map((job) =>
-        job.id === jobId
-          ? {
-              ...job,
-              applicants: job.applicants.map((applicant) =>
-                applicant.id === applicantId
-                  ? { ...applicant, status }
-                  : applicant,
-              ),
-            }
-          : job,
-      ),
-    );
   };
 
   const filteredJobs = jobs.filter((job) => {
@@ -637,24 +676,21 @@ export default function EmployerDashboard() {
                               Category
                             </label>
                             <select
-                              value={newJob.category}
+                              value={newJob.category_id}
                               onChange={(e) =>
                                 setNewJob({
                                   ...newJob,
-                                  category: e.target.value,
+                                  category_id: parseInt(e.target.value),
                                 })
                               }
                               className={`w-full p-3 rounded-lg border ${darkMode ? "bg-gray-700 border-gray-600" : "bg-white border-gray-300"}`}
                             >
                               <option value="">Select category</option>
-                              <option value="Web Development">
-                                Web Development
-                              </option>
-                              <option value="Mobile Development">
-                                Mobile Development
-                              </option>
-                              <option value="Design">Design</option>
-                              <option value="Marketing">Marketing</option>
+                              {(categories || []).map((category) => (
+                                <option key={category.id} value={category.id}>
+                                  {category.name}
+                                </option>
+                              ))}
                             </select>
                           </div>
 
@@ -663,19 +699,19 @@ export default function EmployerDashboard() {
                               Experience Level
                             </label>
                             <select
-                              value={newJob.experience}
+                              value={newJob.experience_level}
                               onChange={(e) =>
                                 setNewJob({
                                   ...newJob,
-                                  experience: e.target.value,
+                                  experience_level: e.target.value,
                                 })
                               }
                               className={`w-full p-3 rounded-lg border ${darkMode ? "bg-gray-700 border-gray-600" : "bg-white border-gray-300"}`}
                             >
                               <option value="">Select level</option>
-                              <option value="Junior">Junior</option>
-                              <option value="Mid">Mid</option>
-                              <option value="Senior">Senior</option>
+                              <option value="entry">Entry Level</option>
+                              <option value="intermediate">Intermediate</option>
+                              <option value="expert">Expert</option>
                             </select>
                           </div>
                         </div>
@@ -686,9 +722,9 @@ export default function EmployerDashboard() {
                               Budget
                             </label>
                             <Input
-                              value={newJob.budget}
+                              value={newJob.salary}
                               onChange={(e) =>
-                                setNewJob({ ...newJob, budget: e.target.value })
+                                setNewJob({ ...newJob, salary: e.target.value })
                               }
                               placeholder="$1,000 - $5,000"
                             />
@@ -731,11 +767,11 @@ export default function EmployerDashboard() {
                           <div className="flex items-center">
                             <input
                               type="checkbox"
-                              checked={newJob.remote}
+                              checked={newJob.remote_allowed}
                               onChange={(e) =>
                                 setNewJob({
                                   ...newJob,
-                                  remote: e.target.checked,
+                                  remote_allowed: e.target.checked,
                                 })
                               }
                               className="mr-2"
@@ -765,199 +801,158 @@ export default function EmployerDashboard() {
                   </div>
                 )}
 
+                {/* Loading State */}
+                {loading && (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0084ca]"></div>
+                  </div>
+                )}
+
+                {/* Error State */}
+                {error && (
+                  <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5 text-red-600" />
+                      <p className="text-sm text-red-700">{error}</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Jobs List */}
-                <div className="space-y-4">
-                  {filteredJobs.map((job) => (
-                    <div
-                      key={job.id}
-                      className={`border rounded-lg p-6 hover:shadow-md transition-shadow ${
-                        darkMode
-                          ? "border-gray-700 bg-gray-800"
-                          : "border-gray-200 bg-white"
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-upwork-h4 text-gray-900">
-                              {job.title}
-                            </h3>
-                            <span
-                              className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                job.status === "active"
-                                  ? "bg-green-100 text-green-700"
-                                  : job.status === "draft"
-                                    ? "bg-yellow-100 text-yellow-700"
-                                    : job.status === "closed"
-                                      ? "bg-red-100 text-red-700"
-                                      : "bg-gray-100 text-gray-700"
-                              }`}
-                            >
-                              {job.status}
-                            </span>
-                            {job.remote && (
-                              <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
-                                Remote
-                              </span>
-                            )}
-                          </div>
-
-                          <p
-                            className={`text-sm mb-3 ${darkMode ? "text-gray-300" : "text-gray-600"}`}
-                          >
-                            {job.description}
-                          </p>
-
-                          <div className="flex items-center gap-4 text-upwork-small text-gray-600">
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              Posted {job.posted}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <FileText className="w-4 h-4" />
-                              {job.proposals} proposals
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <DollarSign className="w-4 h-4" />
-                              {job.budget}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-4 h-4" />
-                              {job.duration}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-4 h-4" />
-                              {job.location}
-                            </span>
-                          </div>
-
-                          <div className="flex flex-wrap gap-2 mt-3">
-                            {job.skills.map((skill, index) => (
-                              <span
-                                key={index}
-                                className={`px-2 py-1 text-xs rounded-full ${
-                                  darkMode
-                                    ? "bg-gray-700 text-gray-300"
-                                    : "bg-gray-100 text-gray-600"
-                                }`}
-                              >
-                                {skill}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
+                {!loading && !error && (
+                  <div className="space-y-4">
+                    {filteredJobs.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500">
+                          No jobs found. Create your first job to get started!
+                        </p>
                       </div>
-
-                      <div className="flex gap-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedJob(job)}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          View Details
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditJob(job)}
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteJob(job.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
-                        </Button>
-                      </div>
-
-                      {/* Applicants Preview */}
-                      {job.applicants.length > 0 && (
+                    ) : (
+                      (filteredJobs || []).map((job) => (
                         <div
-                          className={`mt-4 pt-4 border-t ${darkMode ? "border-gray-700" : "border-gray-200"}`}
+                          key={job.id}
+                          className={`border rounded-lg p-6 hover:shadow-md transition-shadow ${
+                            darkMode
+                              ? "border-gray-700 bg-gray-800"
+                              : "border-gray-200 bg-white"
+                          }`}
                         >
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-sm font-semibold">
-                              Recent Applicants
-                            </h4>
-                            <Button variant="outline" size="sm">
-                              View All ({job.applicants.length})
-                            </Button>
-                          </div>
-                          <div className="space-y-2">
-                            {job.applicants.slice(0, 2).map((applicant) => (
-                              <div
-                                key={applicant.id}
-                                className={`flex items-center justify-between p-3 rounded-lg ${
-                                  darkMode ? "bg-gray-700" : "bg-gray-50"
-                                }`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <img
-                                    src={applicant.avatar}
-                                    alt={applicant.name}
-                                    className="w-8 h-8 rounded-full"
-                                  />
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm font-medium">
-                                        {applicant.name}
-                                      </span>
-                                      <span className="text-xs text-yellow-600">
-                                        {"\u2605"} {applicant.rating}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                                      <span>{applicant.match}% match</span>
-                                      <span>\u2022</span>
-                                      <span>{applicant.applied}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <select
-                                    value={applicant.status}
-                                    onChange={(e) =>
-                                      handleUpdateApplicantStatus(
-                                        job.id,
-                                        applicant.id,
-                                        e.target.value as Applicant["status"],
-                                      )
-                                    }
-                                    className={`text-xs px-2 py-1 rounded ${
-                                      applicant.status === "pending"
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h3 className="text-upwork-h4 text-gray-900">
+                                  {job.title}
+                                </h3>
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                    job.status === "active"
+                                      ? "bg-green-100 text-green-700"
+                                      : job.status === "draft"
                                         ? "bg-yellow-100 text-yellow-700"
-                                        : applicant.status === "reviewed"
-                                          ? "bg-blue-100 text-blue-700"
-                                          : applicant.status === "shortlisted"
-                                            ? "bg-green-100 text-green-700"
-                                            : applicant.status === "rejected"
-                                              ? "bg-red-100 text-red-700"
-                                              : "bg-purple-100 text-purple-700"
+                                        : job.status === "closed"
+                                          ? "bg-red-100 text-red-700"
+                                          : "bg-gray-100 text-gray-700"
+                                  }`}
+                                >
+                                  {job.status}
+                                </span>
+                                {job.remote_allowed && (
+                                  <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
+                                    Remote
+                                  </span>
+                                )}
+                              </div>
+
+                              <p
+                                className={`text-sm mb-3 ${darkMode ? "text-gray-300" : "text-gray-600"}`}
+                              >
+                                {job.description}
+                              </p>
+
+                              <div className="flex items-center gap-4 text-upwork-small text-gray-600">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-4 h-4" />
+                                  Posted{" "}
+                                  {new Date(
+                                    job.created_at,
+                                  ).toLocaleDateString()}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <FileText className="w-4 h-4" />
+                                  {job.applications_count || 0} proposals
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <DollarSign className="w-4 h-4" />
+                                  {job.salary}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-4 h-4" />
+                                  {job.duration}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="w-4 h-4" />
+                                  {job.location}
+                                </span>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 mt-3">
+                                {(job.skills || []).map((skill, index) => (
+                                  <span
+                                    key={index}
+                                    className={`px-2 py-1 text-xs rounded-full ${
+                                      darkMode
+                                        ? "bg-gray-700 text-gray-300"
+                                        : "bg-gray-100 text-gray-600"
                                     }`}
                                   >
-                                    <option value="pending">Pending</option>
-                                    <option value="reviewed">Reviewed</option>
-                                    <option value="shortlisted">
-                                      Shortlisted
-                                    </option>
-                                    <option value="rejected">Rejected</option>
-                                    <option value="hired">Hired</option>
-                                  </select>
-                                </div>
+                                    {skill}
+                                  </span>
+                                ))}
                               </div>
-                            ))}
+                            </div>
+                          </div>
+
+                          <div className="flex gap-3">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedJob(job)}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Details
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewProposals(job.id)}
+                              className="bg-blue-50 hover:bg-blue-100 text-blue-600"
+                            >
+                              <FileText className="w-4 h-4 mr-2" />
+                              View Proposals ({job.applications_count || 0})
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditJob(job)}
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteJob(job.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </Button>
                           </div>
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -1138,4 +1133,261 @@ export default function EmployerDashboard() {
       </div>
     </div>
   );
+
+  {
+    /* Proposals Modal */
+  }
+  {
+    showProposalsModal && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div
+          className={`max-w-4xl w-full max-h-[90vh] overflow-y-auto rounded-lg ${darkMode ? "bg-gray-800" : "bg-white"}`}
+        >
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2
+                className={`text-2xl font-bold ${darkMode ? "text-white" : "text-gray-900"}`}
+              >
+                Job Proposals
+              </h2>
+              <button
+                onClick={() => setShowProposalsModal(false)}
+                className={`p-2 rounded-lg ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {proposalsLoading && (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Loading proposals...</p>
+              </div>
+            )}
+
+            {proposalsError && (
+              <div className="text-center py-8">
+                <p className="text-red-500">{proposalsError}</p>
+              </div>
+            )}
+
+            {!proposalsLoading && !proposalsError && proposals.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No proposals yet for this job.</p>
+              </div>
+            )}
+
+            {!proposalsLoading && !proposalsError && proposals.length > 0 && (
+              <div className="space-y-4">
+                {proposals.map((proposal) => (
+                  <div
+                    key={proposal.id}
+                    className={`border rounded-lg p-6 ${darkMode ? "border-gray-700 bg-gray-700" : "border-gray-200 bg-gray-50"}`}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-4">
+                        {proposal.profile_image && (
+                          <img
+                            src={proposal.profile_image}
+                            alt={proposal.talent_name}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                        )}
+                        <div>
+                          <h3
+                            className={`font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}
+                          >
+                            {proposal.talent_name}
+                          </h3>
+                          <p
+                            className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
+                          >
+                            {proposal.talent_email}
+                          </p>
+                          {proposal.profile_title && (
+                            <p
+                              className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
+                            >
+                              {proposal.profile_title}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-3 py-1 text-xs font-medium rounded-full ${
+                            proposal.status === "pending"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : proposal.status === "reviewed"
+                                ? "bg-blue-100 text-blue-700"
+                                : proposal.status === "shortlisted"
+                                  ? "bg-purple-100 text-purple-700"
+                                  : proposal.status === "rejected"
+                                    ? "bg-red-100 text-red-700"
+                                    : proposal.status === "hired"
+                                      ? "bg-green-100 text-green-700"
+                                      : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {proposal.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    {proposal.cover_letter && (
+                      <div className="mb-4">
+                        <h4
+                          className={`font-medium mb-2 ${darkMode ? "text-white" : "text-gray-900"}`}
+                        >
+                          Cover Letter
+                        </h4>
+                        <p
+                          className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}
+                        >
+                          {proposal.cover_letter}
+                        </p>
+                      </div>
+                    )}
+
+                    {proposal.proposal && (
+                      <div className="mb-4">
+                        <h4
+                          className={`font-medium mb-2 ${darkMode ? "text-white" : "text-gray-900"}`}
+                        >
+                          Proposal
+                        </h4>
+                        <p
+                          className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}
+                        >
+                          {proposal.proposal}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+                      {proposal.hourly_rate && (
+                        <span className="flex items-center gap-1">
+                          <DollarSign className="w-4 h-4" />
+                          {proposal.hourly_rate}/hour
+                        </span>
+                      )}
+                      {proposal.talent_location && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-4 h-4" />
+                          {proposal.talent_location}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        Applied{" "}
+                        {new Date(proposal.applied_at).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-2">
+                      {proposal.status === "pending" && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              handleUpdateApplicationStatus(
+                                proposal.id,
+                                "reviewed",
+                              )
+                            }
+                            className="bg-blue-50 hover:bg-blue-100 text-blue-600"
+                          >
+                            Mark as Reviewed
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              handleUpdateApplicationStatus(
+                                proposal.id,
+                                "shortlisted",
+                              )
+                            }
+                            className="bg-purple-50 hover:bg-purple-100 text-purple-600"
+                          >
+                            Shortlist
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              handleUpdateApplicationStatus(
+                                proposal.id,
+                                "rejected",
+                              )
+                            }
+                            className="bg-red-50 hover:bg-red-100 text-red-600"
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      {proposal.status === "reviewed" && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              handleUpdateApplicationStatus(
+                                proposal.id,
+                                "shortlisted",
+                              )
+                            }
+                            className="bg-purple-50 hover:bg-purple-100 text-purple-600"
+                          >
+                            Shortlist
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              handleUpdateApplicationStatus(
+                                proposal.id,
+                                "rejected",
+                              )
+                            }
+                            className="bg-red-50 hover:bg-red-100 text-red-600"
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      {proposal.status === "shortlisted" && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              handleUpdateApplicationStatus(
+                                proposal.id,
+                                "hired",
+                              )
+                            }
+                            className="bg-green-50 hover:bg-green-100 text-green-600"
+                          >
+                            Hire
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              handleUpdateApplicationStatus(
+                                proposal.id,
+                                "rejected",
+                              )
+                            }
+                            className="bg-red-50 hover:bg-red-100 text-red-600"
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 }

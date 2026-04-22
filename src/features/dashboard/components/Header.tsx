@@ -1,7 +1,10 @@
-import { Link } from "react-router";
-import { MessageSquare, Bell, Moon, Sun } from "lucide-react";
+import { Link, useNavigate } from "react-router";
+import { MessageSquare, Bell, Moon, Sun, Menu, X } from "lucide-react";
 import { PUBLIC_ROUTES, SHARED_ROUTES } from "../../../config/routes";
 import DropdownMenu from "../../../components/ui/DropdownMenu";
+import { useState } from "react";
+import { useAuth } from "../../../contexts/AuthContext";
+import { logout } from "../../../api/auth/authApi";
 
 interface HeaderProps {
   darkMode: boolean;
@@ -16,6 +19,25 @@ export function Header({
   userImage,
   onImageUpload,
 }: HeaderProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, token, logout: authLogout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      if (token) {
+        await logout(token);
+      }
+      authLogout();
+      navigate("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Still logout locally even if API call fails
+      authLogout();
+      navigate("/");
+    }
+  };
+
   return (
     <header
       className={`sticky top-0 z-50 shadow-sm transition-colors duration-300 ${
@@ -37,20 +59,15 @@ export function Header({
             </Link>
 
             {/* Mobile menu button */}
-            <button className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              {mobileMenuOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
             </button>
 
             <div className="hidden md:flex items-center gap-6 lg:gap-8">
@@ -128,13 +145,49 @@ export function Header({
               </button>
             </Link>
 
+            {/* Mobile Menu */}
+            {mobileMenuOpen && (
+              <div className="md:hidden absolute top-16 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-40">
+                <div className="flex flex-col p-4 space-y-3">
+                  <button
+                    className={`text-sm font-medium text-left ${
+                      darkMode
+                        ? "text-gray-300 hover:text-[#0084ca]"
+                        : "text-gray-700 hover:text-[#0084ca]"
+                    }`}
+                  >
+                    Find Jobs
+                  </button>
+                  <button
+                    className={`text-sm font-medium text-left ${
+                      darkMode
+                        ? "text-gray-300 hover:text-[#0084ca]"
+                        : "text-gray-700 hover:text-[#0084ca]"
+                    }`}
+                  >
+                    My Proposals
+                  </button>
+                  <button
+                    className={`text-sm font-medium text-left ${
+                      darkMode
+                        ? "text-gray-300 hover:text-[#0084ca]"
+                        : "text-gray-700 hover:text-[#0084ca]"
+                    }`}
+                  >
+                    Deliver Works
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="hidden sm:block">
               <DropdownMenu
-                userName="Abebe Kebede"
-                userEmail="abebe.kebede@example.com"
+                userName={user?.name || "Current User"}
+                userEmail={user?.email || "user@example.com"}
                 userImage={userImage}
-                userId="current-user"
+                userId={user?.id?.toString() || "current-user"}
                 onImageUpload={onImageUpload}
+                onLogout={handleLogout}
               />
             </div>
           </div>

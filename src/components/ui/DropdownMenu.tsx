@@ -17,6 +17,7 @@ interface DropdownMenuProps {
   userImage?: string;
   userId?: string;
   onImageUpload?: (file: File) => void;
+  onLogout?: () => void;
 }
 
 export default function DropdownMenu({
@@ -25,6 +26,7 @@ export default function DropdownMenu({
   userImage,
   userId,
   onImageUpload,
+  onLogout,
 }: DropdownMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -191,8 +193,9 @@ export default function DropdownMenu({
           <div className="border-t border-gray-200 p-1">
             <button
               onClick={() => {
-                // Handle logout logic here
-                console.log("Logging out...");
+                if (onLogout) {
+                  onLogout();
+                }
                 setIsOpen(false);
               }}
               className="flex items-center gap-3 w-full px-3 py-2 hover:bg-red-50 transition-colors group rounded-md"

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { DollarSign, TrendingUp, ArrowRight } from "lucide-react";
 import { Link } from "react-router";
 import { TALENT_ROUTES } from "../../../config/routes";
+import { getTokenBalance } from "../../../api/talent/talentApi";
 
 export function TokenCard() {
   const [tokenBalance, setTokenBalance] = useState<number>(0);
@@ -13,10 +14,8 @@ export function TokenCard() {
 
   const loadTokenBalance = async () => {
     try {
-      // Mock data - replace with actual API call
-      // const balance = await getTokenBalance();
-      const balance = 50; // Default mock value
-      setTokenBalance(balance);
+      const response = await getTokenBalance();
+      setTokenBalance(response.balance);
     } catch (error) {
       console.error("Failed to load token balance:", error);
     } finally {

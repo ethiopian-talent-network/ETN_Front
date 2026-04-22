@@ -6,9 +6,6 @@ import {
   Globe,
   FileText,
   Plus,
-  Edit2,
-  Save,
-  X,
   Loader,
   CheckCircle,
   AlertCircle,
@@ -22,6 +19,8 @@ import {
   type TalentProfile as TalentProfileType,
   type UpdateProfileData,
 } from "../../api/talent/talentApi";
+import { ProfileHeader } from "../profile/ProfileHeader";
+import type { ProfileData } from "../../types/profile";
 
 interface TalentProfileProps {
   darkMode?: boolean;
@@ -31,14 +30,15 @@ export const TalentProfile: React.FC<TalentProfileProps> = ({
   darkMode = false,
 }) => {
   const [profile, setProfile] = useState<TalentProfileType | null>(null);
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [tokenBalance, setTokenBalance] = useState<number>(0);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [newSkill, setNewSkill] = useState("");
   const [formData, setFormData] = useState<UpdateProfileData>({});
+  const [completionPercentage, setCompletionPercentage] = useState<number>(0);
 
   useEffect(() => {
     fetchProfileData();
@@ -56,6 +56,53 @@ export const TalentProfile: React.FC<TalentProfileProps> = ({
 
       setProfile(profileResponse.data);
       setTokenBalance(tokenResponse.balance);
+
+      // Map backend data to ProfileData structure
+      const mappedProfileData: ProfileData = {
+        name: profileResponse.data.name || "",
+        title: profileResponse.data.name || "Talent",
+        location: "Not specified",
+        hourlyRate: "0",
+        bio: profileResponse.data.about || "",
+        skills: profileResponse.data.skills || [],
+        languages: [],
+        education: [],
+        certifications: [],
+        portfolio: [],
+        about: profileResponse.data.about,
+        educationText: profileResponse.data.education,
+        experience: profileResponse.data.experience,
+        languagesText: profileResponse.data.languages,
+        linkedin: profileResponse.data.linkedin,
+        github: profileResponse.data.github,
+        resume_url: profileResponse.data.resume_url,
+      };
+
+      setProfileData(mappedProfileData);
+
+      // Calculate completion percentage
+      const completedFields = [
+        mappedProfileData.name,
+        mappedProfileData.title,
+        mappedProfileData.location,
+        mappedProfileData.hourlyRate,
+        mappedProfileData.bio,
+      ].filter((field) => field && field.trim().length > 0).length;
+      const hasSkills = mappedProfileData.skills.length > 0;
+      const hasEducation = !!mappedProfileData.educationText;
+      const hasPortfolio = mappedProfileData.portfolio.length > 0;
+      const hasLanguages = !!mappedProfileData.languagesText;
+
+      const totalFields = 5 + 4;
+      const completedTotal =
+        completedFields +
+        (hasSkills ? 1 : 0) +
+        (hasEducation ? 1 : 0) +
+        (hasPortfolio ? 1 : 0) +
+        (hasLanguages ? 1 : 0);
+
+      setCompletionPercentage(Math.round((completedTotal / totalFields) * 100));
+
       setFormData({
         education: profileResponse.data.education || "",
         experience: profileResponse.data.experience || "",
@@ -71,6 +118,15 @@ export const TalentProfile: React.FC<TalentProfileProps> = ({
     }
   };
 
+  const handleProfileChange = (updatedProfile: ProfileData) => {
+    setProfileData(updatedProfile);
+  };
+
+  const handleImageUpload = async (file: File): Promise<string> => {
+    // Placeholder for image upload - implement with actual API
+    return URL.createObjectURL(file);
+  };
+
   const handleInputChange = (field: keyof UpdateProfileData, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -80,7 +136,6 @@ export const TalentProfile: React.FC<TalentProfileProps> = ({
   };
 
   const handleSaveProfile = async () => {
-    setSaving(true);
     setError(null);
     setSuccess(null);
 
@@ -94,8 +149,6 @@ export const TalentProfile: React.FC<TalentProfileProps> = ({
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       setError(err.message || "Failed to update profile");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -168,31 +221,22 @@ export const TalentProfile: React.FC<TalentProfileProps> = ({
       className={`max-w-4xl mx-auto p-6 rounded-xl ${darkMode ? "bg-gray-800" : "bg-white shadow-lg"}`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center space-x-4">
-          <div
-            className={`w-20 h-20 rounded-full flex items-center justify-center ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}
-          >
-            <User className="w-10 h-10 text-gray-400" />
-          </div>
-          <div>
-            <h1
-              className={`text-2xl font-bold ${darkMode ? "text-white" : "text-gray-900"}`}
-            >
-              {profile.name}
-            </h1>
-            <p
-              className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
-            >
-              {profile.email}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-4">
+      {profileData && (
+        <div className="mb-8">
+          <ProfileHeader
+            profile={profileData}
+            isEditing={editing}
+            onEdit={() => setEditing(true)}
+            onSave={handleSaveProfile}
+            onCancel={handleCancelEdit}
+            onProfileChange={handleProfileChange}
+            onImageUpload={handleImageUpload}
+            completionPercentage={completionPercentage}
+            darkMode={darkMode}
+          />
           {/* Token Balance */}
           <div
-            className={`px-4 py-2 rounded-lg ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}
+            className={`mt-4 px-4 py-2 rounded-lg inline-block ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}
           >
             <div
               className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
@@ -205,46 +249,8 @@ export const TalentProfile: React.FC<TalentProfileProps> = ({
               {tokenBalance}
             </div>
           </div>
-
-          {/* Edit/Save Buttons */}
-          {editing ? (
-            <div className="flex space-x-2">
-              <button
-                onClick={handleCancelEdit}
-                className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
-                disabled={saving}
-              >
-                <X className="w-5 h-5" />
-              </button>
-              <button
-                onClick={handleSaveProfile}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center"
-                disabled={saving}
-              >
-                {saving ? (
-                  <>
-                    <Loader className="w-4 h-4 animate-spin mr-2" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Save
-                  </>
-                )}
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setEditing(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-            >
-              <Edit2 className="w-4 h-4 mr-2" />
-              Edit Profile
-            </button>
-          )}
         </div>
-      </div>
+      )}
 
       {/* Success/Error Messages */}
       {success && (

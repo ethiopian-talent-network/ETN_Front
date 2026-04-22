@@ -101,6 +101,12 @@ export const TALENT_ROUTES: Record<string, RouteConfig> = {
     roles: [RouteRole.TALENT],
     description: "Job application form",
   },
+  BILLING: {
+    path: "/billing",
+    title: "Billing",
+    roles: [RouteRole.TALENT],
+    description: "Billing information management",
+  },
 };
 
 /**
