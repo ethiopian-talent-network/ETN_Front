@@ -3,7 +3,7 @@ import Login from "./pages/login";
 import Signup from "./pages/signup";
 import Landing from "./pages/landing";
 import OtpVerification from "./pages/otp-verification";
-import EmployerDashboard from "./pages/employerDashboard";
+import EmployerDashboard from "./pages/employer/EmployerDashboard";
 import FreelancerDashboard from "./features/dashboard/FreelancerDashboard";
 import MessagingPage from "./features/messaging/MessagingPage";
 import JobPosting from "./pages/JobPosting";
