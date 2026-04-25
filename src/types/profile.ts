@@ -37,6 +37,7 @@ export interface ProfileData {
   hourlyRate: string;
   bio: string;
   image?: string;
+  profile_image?: string;
   skills: string[];
   languages: Language[];
   education: Education[];

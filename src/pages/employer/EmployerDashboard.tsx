@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 import { useDarkMode } from "../../contexts/DarkModeContext";
+import { EMPLOYER_ROUTES } from "../../config/routes";
 import { useJobs } from "../../features/employer/hooks/useJobs";
 import { useProposals } from "../../features/employer/hooks/useProposals";
 import { useCategories } from "../../features/employer/hooks/useCategories";
+import { useTalents } from "../../features/employer/hooks/useTalents";
 import { StatsCards } from "../../features/employer/components/StatsCards";
 import { TabsNavigation } from "../../features/employer/components/TabsNavigation";
 import { JobList } from "../../features/employer/components/JobList";
@@ -22,31 +25,7 @@ import type {
   Contract,
 } from "../../features/employer/types/employer.types";
 
-// Mock data for talents and contracts (replace with actual API calls)
-const mockTalents: Talent[] = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john@example.com",
-    profile_title: "Senior React Developer",
-    profile_image: "",
-    hourly_rate: 75,
-    location: "New York",
-    skills: ["React", "TypeScript", "Node.js"],
-    created_at: "2024-01-01",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    email: "jane@example.com",
-    profile_title: "Full Stack Developer",
-    profile_image: "",
-    hourly_rate: 65,
-    location: "San Francisco",
-    skills: ["JavaScript", "Python", "Django"],
-    created_at: "2024-01-01",
-  },
-];
+// Mock data for contracts (replace with actual API calls)
 
 const mockContracts: Contract[] = [
   {
@@ -79,8 +58,9 @@ const mockContracts: Contract[] = [
   },
 ];
 
-function EmployerDashboard() {
+export const EmployerDashboard: React.FC = () => {
   const { darkMode } = useDarkMode();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>("jobs");
   const [showJobModal, setShowJobModal] = useState(false);
   const [showProposalsModal, setShowProposalsModal] = useState(false);
@@ -107,6 +87,13 @@ function EmployerDashboard() {
     clearProposals,
   } = useProposals();
   const { categories } = useCategories();
+  const {
+    talents,
+    loading: talentsLoading,
+    error: talentsError,
+    getTalents,
+    clearTalents,
+  } = useTalents();
 
   // Calculate stats
   const stats: EmployerStats = {
@@ -126,10 +113,16 @@ function EmployerDashboard() {
     fetchJobs();
   }, [fetchJobs]);
 
+  // Fetch talents when talents tab is active
+  useEffect(() => {
+    if (activeTab === "talents") {
+      getTalents();
+    }
+  }, [activeTab, getTalents]);
+
   // Handle job actions
   const handleCreateJob = () => {
-    setEditingJob(null);
-    setShowJobModal(true);
+    navigate(EMPLOYER_ROUTES.POST_JOB.path);
   };
 
   const handleEditJob = (job: Job) => {
@@ -148,17 +141,12 @@ function EmployerDashboard() {
     console.log("View details for job:", job);
   };
 
-  const handleViewProposals = async (job: Job) => {
-    console.log("handleViewProposals called with job:", job);
+  const handleViewProposals = (job: Job) => {
+    console.log("Navigating to proposals for job:", job);
     console.log("Job ID:", job.id);
-    try {
-      await fetchProposals(job.id);
-      console.log("Proposals fetched successfully");
-      setShowProposalsModal(true);
-      console.log("Modal should be showing");
-    } catch (error) {
-      console.error("Error fetching proposals:", error);
-    }
+    navigate(
+      EMPLOYER_ROUTES.PROPOSALS.path.replace(":jobId", job.id.toString()),
+    );
   };
 
   const handleJobSubmit = async (jobData: any) => {
@@ -220,7 +208,9 @@ function EmployerDashboard() {
       case "talents":
         return (
           <TalentList
-            talents={mockTalents}
+            talents={talents}
+            loading={talentsLoading}
+            error={talentsError}
             darkMode={darkMode}
             onInviteTalent={handleInviteTalent}
             onViewProfile={handleViewTalentProfile}
@@ -303,6 +293,6 @@ function EmployerDashboard() {
       </div>
     </div>
   );
-}
+};
 
-export default EmployerDashboard
+export default EmployerDashboard;

@@ -9,6 +9,7 @@ const getAuthHeaders = () => {
 export interface TalentProfile {
   name: string;
   email: string;
+  profile_image?: string;
   about?: string;
   education?: string;
   experience?: string;
@@ -222,6 +223,34 @@ export const deletePortfolio = async () => {
     return await response.json();
   } catch (error) {
     console.error("Error deleting portfolio:", error);
+    throw error;
+  }
+};
+
+// Upload profile image
+export const uploadProfileImage = async (
+  imageFile: File,
+): Promise<{ message: string; imageUrl: string }> => {
+  try {
+    const formData = new FormData();
+    formData.append("image", imageFile);
+
+    const response = await fetch(`${API_BASE_URL}/api/talents/upload-profile`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to upload profile image");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error uploading profile image:", error);
     throw error;
   }
 };

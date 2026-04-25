@@ -68,11 +68,11 @@ export function ProfileCard({ darkMode }: ProfileCardProps) {
     <div className="lg:col-span-1 order-first lg:order-last">
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg p-4 sm:p-6">
         <div className="flex items-start gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-[#0084ca] to-[#006ba6] rounded-full flex items-center justify-center flex-shrink-0 shadow-inner">
-            {profile?.image ? (
+          <div className="w-12 h-12 bg-gradient-to-br from-[#0084ca] to-[#006ba6] rounded-full flex items-center justify-center flex-shrink-0 shadow-inner overflow-hidden">
+            {profile?.image || profile?.profile_image ? (
               <img
-                src={profile.image}
-                alt={profile.name}
+                src={profile?.image || profile?.profile_image}
+                alt={profile?.name || user?.name || "User"}
                 className="w-full h-full object-cover rounded-full"
               />
             ) : (

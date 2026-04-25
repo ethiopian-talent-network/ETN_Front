@@ -1,6 +1,10 @@
 import { Link, useNavigate } from "react-router";
 import { MessageSquare, Bell, Moon, Sun, Menu, X } from "lucide-react";
-import { PUBLIC_ROUTES, SHARED_ROUTES } from "../../../config/routes";
+import {
+  PUBLIC_ROUTES,
+  SHARED_ROUTES,
+  TALENT_ROUTES,
+} from "../../../config/routes";
 import DropdownMenu from "../../../components/ui/DropdownMenu";
 import { useState } from "react";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -80,15 +84,16 @@ export function Header({
               >
                 Find Jobs
               </button>
-              <button
+              <Link
+                to={TALENT_ROUTES.APPLICATIONS.path}
                 className={`text-sm font-medium transition-all duration-200 hover:scale-105 ${
                   darkMode
                     ? "text-gray-300 hover:text-[#0084ca]"
                     : "text-gray-700 hover:text-[#0084ca]"
                 }`}
               >
-                My Proposals
-              </button>
+                My Applications
+              </Link>
               <button
                 className={`text-sm font-medium transition-all duration-200 hover:scale-105 ${
                   darkMode
@@ -158,15 +163,16 @@ export function Header({
                   >
                     Find Jobs
                   </button>
-                  <button
+                  <Link
+                    to={TALENT_ROUTES.APPLICATIONS.path}
                     className={`text-sm font-medium text-left ${
                       darkMode
                         ? "text-gray-300 hover:text-[#0084ca]"
                         : "text-gray-700 hover:text-[#0084ca]"
                     }`}
                   >
-                    My Proposals
-                  </button>
+                    My Applications
+                  </Link>
                   <button
                     className={`text-sm font-medium text-left ${
                       darkMode

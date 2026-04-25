@@ -3,6 +3,7 @@ import type { Proposal } from "../types/employer.types";
 import {
   fetchAllApplications,
   updateApplicationStatus,
+  getApplicationsByJob,
 } from "../../../api/employer/employerApi";
 
 export const useProposals = () => {
@@ -20,17 +21,26 @@ export const useProposals = () => {
         throw new Error("No authentication token found");
       }
 
-      const response = await fetchAllApplications(token);
-      console.log("All applications from API:", response);
-      const filteredApplications =
-        response.applications?.filter((app) => app.job_id === jobId) || [];
-      console.log(
-        "Filtered applications for job",
-        jobId,
-        ":",
-        filteredApplications,
-      );
-      setProposals(filteredApplications);
+      const applications = await getApplicationsByJob(token, jobId);
+      console.log("Applications for job", jobId, ":", applications);
+
+      // Transform the response to match the Proposal interface
+      const transformedProposals = applications.map((app: any) => ({
+        id: app.application_id,
+        talent_id: app.talent_id || 0,
+        talent_name: app.talent_name,
+        talent_email: app.email,
+        profile_title: "", // Not available in new API response
+        hourly_rate: "", // Not available in new API response
+        talent_location: "", // Not available in new API response
+        cover_letter: app.cover_letter,
+        proposal: app.proposal,
+        status: app.status,
+        applied_at: app.applied_at,
+        job_id: jobId,
+      }));
+
+      setProposals(transformedProposals);
     } catch (err: any) {
       setError(err.message || "Failed to fetch proposals");
     } finally {

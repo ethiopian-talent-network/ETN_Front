@@ -12,6 +12,7 @@ import {
   FileText,
   CheckCircle,
   AlertCircle,
+  Coins,
 } from "lucide-react";
 
 export default function JobPosting() {
@@ -34,6 +35,7 @@ export default function JobPosting() {
       max: "",
       fixed: "",
     },
+    tokenCost: "10",
     attachments: [] as string[],
   });
 
@@ -122,13 +124,59 @@ export default function JobPosting() {
 
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      console.log("Job posted:", jobData);
+      // Map category name to ID (you may need to adjust based on your API)
+      const categoryMap: Record<string, number> = {
+        "Development & IT": 1,
+        "Design & Creative": 2,
+        "Sales & Marketing": 3,
+        "Writing & Translation": 4,
+        "Admin & Customer Support": 5,
+        "Finance & Accounting": 6,
+        "Engineering & Architecture": 7,
+      };
+
+      const jobPayload = {
+        title: jobData.title,
+        description: jobData.description,
+        category_id: categoryMap[jobData.category] || 1,
+        experience_level: jobData.experience,
+        salary:
+          jobData.budget.type === "fixed"
+            ? jobData.budget.fixed
+            : `${jobData.budget.min}-${jobData.budget.max}`,
+        budget_type: jobData.budget.type,
+        duration: jobData.duration,
+        location: "Remote",
+        remote_allowed: true,
+        token_cost: parseInt(jobData.tokenCost) || 10,
+        skills: jobData.skills,
+      };
+
+      const response = await fetch(
+        "http://localhost:5000/api/jobs/employer/jobs",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(jobPayload),
+        },
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to create job");
+      }
+
+      const result = await response.json();
+      console.log("Job posted:", result);
       navigate("/employer-dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error posting job:", error);
-      setErrors({ submit: "Failed to post job. Please try again." });
+      setErrors({
+        submit: error.message || "Failed to post job. Please try again.",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -529,6 +577,36 @@ export default function JobPosting() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Application Token Cost
+                  </label>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <p className="text-sm text-gray-600 mb-3">
+                      Set how many tokens talents need to spend to apply for
+                      this job. This helps filter serious applicants.
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1">
+                        <Coins className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0084ca]" />
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={jobData.tokenCost}
+                          onChange={(e) =>
+                            setJobData({
+                              ...jobData,
+                              tokenCost: e.target.value,
+                            })
+                          }
+                          placeholder="10"
+                          className="pl-10"
+                        />
+                      </div>
+                      <span className="text-sm text-gray-600">tokens</span>
+                    </div>
+                  </div>
+
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
                     What is your budget?
                   </label>
                   <div className="flex gap-4 mb-4">
@@ -701,6 +779,12 @@ export default function JobPosting() {
                         {jobData.budget.type === "fixed"
                           ? `$${jobData.budget.fixed} (Fixed)`
                           : `$${jobData.budget.min} - $${jobData.budget.max}/hr`}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Token Cost:</span>
+                      <span className="ml-2 font-medium text-[#0084ca]">
+                        {jobData.tokenCost} tokens
                       </span>
                     </div>
                   </div>

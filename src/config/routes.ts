@@ -131,6 +131,12 @@ export const EMPLOYER_ROUTES: Record<string, RouteConfig> = {
     roles: [RouteRole.EMPLOYER],
     description: "View job applications",
   },
+  PROPOSALS: {
+    path: "/proposals/:jobId",
+    title: "Job Proposals",
+    roles: [RouteRole.EMPLOYER],
+    description: "View proposals for a specific job",
+  },
 };
 
 /**

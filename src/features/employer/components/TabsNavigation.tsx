@@ -34,7 +34,7 @@ export const TabsNavigation: React.FC<TabsNavigationProps> = ({
     },
     {
       id: "proposals",
-      label: "Proposals",
+      label: "Applications",
       icon: (
         <svg
           className="w-5 h-5"

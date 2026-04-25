@@ -40,6 +40,9 @@ export interface Proposal {
   applied_at: string;
   tokens_used: number;
   job_id?: number;
+  job_title?: string;
+  company_name?: string;
+  company_location?: string;
 }
 
 export interface Talent {
@@ -80,6 +83,7 @@ export interface JobFormData {
   location: string;
   remote_allowed: boolean;
   skills?: number[];
+  token_cost?: number;
 }
 
 export interface PaginationInfo {

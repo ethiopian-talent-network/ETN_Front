@@ -13,6 +13,7 @@ import MyApplications from "./components/talent/MyApplications";
 import Billing from "./components/talent/Billing";
 import JobApplications from "./pages/JobApplications";
 import ApplyToJob from "./pages/ApplyToJob";
+import ProposalsPage from "./pages/employer/ProposalsPage";
 import { DarkModeProvider } from "./contexts/DarkModeContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/routes/ProtectedRoute";
@@ -124,6 +125,14 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["employer"]}>
                     <JobApplications />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path={EMPLOYER_ROUTES.PROPOSALS.path}
+                element={
+                  <ProtectedRoute allowedRoles={["employer"]}>
+                    <ProposalsPage />
                   </ProtectedRoute>
                 }
               />

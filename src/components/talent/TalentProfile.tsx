@@ -16,6 +16,7 @@ import {
   updateTalentProfile,
   addSkills,
   getTokenBalance,
+  uploadProfileImage,
   type TalentProfile as TalentProfileType,
   type UpdateProfileData,
 } from "../../api/talent/talentApi";
@@ -64,6 +65,7 @@ export const TalentProfile: React.FC<TalentProfileProps> = ({
         location: "Not specified",
         hourlyRate: "0",
         bio: profileResponse.data.about || "",
+        image: profileResponse.data.profile_image || "",
         skills: profileResponse.data.skills || [],
         languages: [],
         education: [],
@@ -123,8 +125,14 @@ export const TalentProfile: React.FC<TalentProfileProps> = ({
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
-    // Placeholder for image upload - implement with actual API
-    return URL.createObjectURL(file);
+    try {
+      const response = await uploadProfileImage(file);
+      setSuccess("Profile image uploaded successfully");
+      return response.imageUrl;
+    } catch (error: any) {
+      setError(error.message || "Failed to upload profile image");
+      throw error;
+    }
   };
 
   const handleInputChange = (field: keyof UpdateProfileData, value: string) => {
