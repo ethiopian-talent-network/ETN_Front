@@ -107,6 +107,24 @@ export const TALENT_ROUTES: Record<string, RouteConfig> = {
     roles: [RouteRole.TALENT],
     description: "Billing information management",
   },
+  PORTFOLIO: {
+    path: "/portfolio",
+    title: "Portfolio & Skills",
+    roles: [RouteRole.TALENT],
+    description: "Manage portfolio projects and skills",
+  },
+  NETWORK: {
+    path: "/talent-network",
+    title: "Talent Network",
+    roles: [RouteRole.TALENT],
+    description: "Connect with other talents",
+  },
+  DISCOVER: {
+    path: "/discover-talents",
+    title: "Discover Talents",
+    roles: [RouteRole.TALENT],
+    description: "Discover and connect with talents",
+  },
 };
 
 /**
@@ -136,6 +154,12 @@ export const EMPLOYER_ROUTES: Record<string, RouteConfig> = {
     title: "Job Proposals",
     roles: [RouteRole.EMPLOYER],
     description: "View proposals for a specific job",
+  },
+  ALL_PROPOSALS: {
+    path: "/proposals",
+    title: "All Proposals",
+    roles: [RouteRole.EMPLOYER],
+    description: "View all proposals and applications",
   },
 };
 

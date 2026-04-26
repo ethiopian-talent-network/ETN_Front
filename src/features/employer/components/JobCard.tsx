@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "../../../components/ui/button";
+import { Edit2, Trash2, Eye, Users, Calendar, DollarSign } from "lucide-react";
 import type { Job } from "../types/employer.types";
 
 interface JobCardProps {
@@ -11,169 +11,111 @@ interface JobCardProps {
   onViewProposals: (job: Job) => void;
 }
 
+const statusConfig: Record<string, { label: string; cls: string }> = {
+  active:  { label: "Active",  cls: "bg-emerald-50 text-emerald-700 border border-emerald-200" },
+  draft:   { label: "Draft",   cls: "bg-gray-100 text-gray-600 border border-gray-200" },
+  closed:  { label: "Closed",  cls: "bg-red-50 text-red-700 border border-red-200" },
+  paused:  { label: "Paused",  cls: "bg-amber-50 text-amber-700 border border-amber-200" },
+};
+
 export const JobCard: React.FC<JobCardProps> = ({
-  job,
-  darkMode = false,
-  onViewDetails,
-  onEdit,
-  onDelete,
-  onViewProposals,
+  job, darkMode = false, onViewDetails, onEdit, onDelete, onViewProposals,
 }) => {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800";
-      case "draft":
-        return "bg-gray-100 text-gray-800";
-      case "closed":
-        return "bg-red-100 text-red-800";
-      case "paused":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+  const status = statusConfig[job.status] ?? statusConfig.draft;
+  const dm = darkMode;
 
   return (
-    <div
-      className={`border rounded-lg p-6 transition-shadow hover:shadow-lg ${
-        darkMode ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"
-      }`}
-    >
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex-1">
-          <h3
-            className={`text-lg font-semibold mb-2 ${darkMode ? "text-white" : "text-gray-900"}`}
+    <tr className={`group transition-colors ${dm ? "hover:bg-gray-750 border-gray-700" : "hover:bg-gray-50 border-gray-100"}`}>
+      {/* Title + category */}
+      <td className="py-4 pl-6 pr-4">
+        <div className="flex flex-col gap-0.5">
+          <button
+            onClick={() => onViewDetails(job)}
+            className={`text-sm font-semibold text-left hover:text-[#0084ca] transition-colors ${dm ? "text-white" : "text-gray-900"}`}
           >
             {job.title}
-          </h3>
-          <p
-            className={`text-sm mb-3 line-clamp-2 ${darkMode ? "text-gray-300" : "text-gray-600"}`}
-          >
-            {job.description}
-          </p>
-          <div className="flex flex-wrap gap-2 mb-3">
-            <span
-              className={`text-xs px-2 py-1 rounded-full ${getStatusColor(job.status)}`}
-            >
-              {job.status}
-            </span>
-            {job.category_name && (
-              <span
-                className={`text-xs px-2 py-1 rounded-full ${
-                  darkMode
-                    ? "bg-gray-700 text-gray-300"
-                    : "bg-gray-100 text-gray-700"
-                }`}
-              >
-                {job.category_name}
-              </span>
-            )}
-            <span
-              className={`text-xs px-2 py-1 rounded-full ${
-                darkMode
-                  ? "bg-gray-700 text-gray-300"
-                  : "bg-gray-100 text-gray-700"
-              }`}
-            >
-              {job.budget_type === "fixed" ? "Fixed Price" : "Hourly"}
-            </span>
-            {job.salary && (
-              <span
-                className={`text-xs px-2 py-1 rounded-full ${
-                  darkMode
-                    ? "bg-blue-900 text-blue-300"
-                    : "bg-blue-100 text-blue-700"
-                }`}
-              >
-                {job.salary}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex flex-col items-end gap-2 ml-4">
-          <span
-            className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-500"}`}
-          >
-            Posted {new Date(job.created_at).toLocaleDateString()}
+          </button>
+          <span className={`text-xs ${dm ? "text-gray-400" : "text-gray-500"}`}>
+            {job.category_name || "Uncategorized"} · {job.experience_level}
           </span>
-          {job.applications_count !== undefined && (
-            <div className="flex items-center gap-1">
-              <svg
-                className={`w-4 h-4 ${darkMode ? "text-gray-400" : "text-gray-500"}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-                />
-              </svg>
-              <span
-                className={`text-sm font-medium ${darkMode ? "text-gray-300" : "text-gray-700"}`}
-              >
-                {job.applications_count} proposals
-              </span>
-            </div>
-          )}
         </div>
-      </div>
+      </td>
 
-      <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => onViewDetails(job)}
-          className={
-            darkMode ? "border-gray-600 text-gray-300 hover:bg-gray-700" : ""
-          }
-        >
-          View Details
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => {
-            console.log("View Proposals button clicked for job:", job);
-            onViewProposals(job);
-          }}
-          className={
-            darkMode ? "border-gray-600 text-gray-300 hover:bg-gray-700" : ""
-          }
-        >
-          View Proposals
-        </Button>
+      {/* Status badge */}
+      <td className="py-4 px-4">
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${status.cls}`}>
+          <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+            job.status === "active" ? "bg-emerald-500" :
+            job.status === "closed" ? "bg-red-500" :
+            job.status === "paused" ? "bg-amber-500" : "bg-gray-400"
+          }`} />
+          {status.label}
+        </span>
+      </td>
+
+      {/* Budget */}
+      <td className="py-4 px-4">
+        <div className={`flex items-center gap-1 text-sm ${dm ? "text-gray-300" : "text-gray-700"}`}>
+          <DollarSign className="w-3.5 h-3.5 text-gray-400" />
+          <span>{job.salary || "—"}</span>
+          <span className={`text-xs ${dm ? "text-gray-500" : "text-gray-400"}`}>
+            {job.budget_type === "hourly" ? "/hr" : " fixed"}
+          </span>
+        </div>
+      </td>
+
+      {/* Applications */}
+      <td className="py-4 px-4">
         <button
-          onClick={() => {
-            console.log("Test button clicked for job:", job);
-            alert("Test button works!");
-          }}
-          className="px-3 py-1 text-sm border rounded"
+          onClick={() => onViewProposals(job)}
+          className="flex items-center gap-1.5 group/btn"
         >
-          Test
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-medium transition-colors ${
+            (job.applications_count ?? 0) > 0
+              ? dm ? "bg-blue-900/30 text-blue-400 hover:bg-blue-900/50" : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+              : dm ? "text-gray-500" : "text-gray-400"
+          }`}>
+            <Users className="w-3.5 h-3.5" />
+            {job.applications_count ?? 0}
+            <span className="text-xs font-normal">applicants</span>
+          </div>
         </button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => onEdit(job)}
-          className={
-            darkMode ? "border-gray-600 text-gray-300 hover:bg-gray-700" : ""
-          }
-        >
-          Edit
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => onDelete(job)}
-          className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
-        >
-          Delete
-        </Button>
-      </div>
-    </div>
+      </td>
+
+      {/* Posted date */}
+      <td className="py-4 px-4">
+        <div className={`flex items-center gap-1 text-xs ${dm ? "text-gray-400" : "text-gray-500"}`}>
+          <Calendar className="w-3.5 h-3.5" />
+          {new Date(job.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+        </div>
+      </td>
+
+      {/* Actions */}
+      <td className="py-4 pl-4 pr-6">
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => onViewProposals(job)}
+            title="View Applications"
+            className={`p-1.5 rounded-lg transition-colors ${dm ? "hover:bg-gray-700 text-gray-400 hover:text-white" : "hover:bg-gray-100 text-gray-500 hover:text-gray-900"}`}
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onEdit(job)}
+            title="Edit Job"
+            className={`p-1.5 rounded-lg transition-colors ${dm ? "hover:bg-gray-700 text-gray-400 hover:text-white" : "hover:bg-gray-100 text-gray-500 hover:text-gray-900"}`}
+          >
+            <Edit2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onDelete(job)}
+            title="Delete Job"
+            className="p-1.5 rounded-lg transition-colors hover:bg-red-50 text-gray-400 hover:text-red-600"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </td>
+    </tr>
   );
 };

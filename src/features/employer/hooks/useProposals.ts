@@ -24,19 +24,16 @@ export const useProposals = () => {
       const applications = await getApplicationsByJob(token, jobId);
       console.log("Applications for job", jobId, ":", applications);
 
-      // Transform the response to match the Proposal interface
       const transformedProposals = applications.map((app: any) => ({
-        id: app.application_id,
+        id: app.applicationID,
         talent_id: app.talent_id || 0,
-        talent_name: app.talent_name,
+        talent_name: app.name,
         talent_email: app.email,
-        profile_title: "", // Not available in new API response
-        hourly_rate: "", // Not available in new API response
-        talent_location: "", // Not available in new API response
-        cover_letter: app.cover_letter,
-        proposal: app.proposal,
+        cover_letter: app.cover_letter ?? "",
+        proposal: app.proposal ?? "",
         status: app.status,
         applied_at: app.applied_at,
+        tokens_used: app.tokens_used ?? 0,
         job_id: jobId,
       }));
 
@@ -55,29 +52,41 @@ export const useProposals = () => {
 
       try {
         const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No authentication token found");
-        }
+        if (!token) throw new Error("No authentication token found");
 
         await updateApplicationStatus(
           token,
           applicationId,
-          status as
-            | "pending"
-            | "reviewed"
-            | "shortlisted"
-            | "rejected"
-            | "hired",
+          status as "pending" | "reviewed" | "shortlisted" | "rejected" | "hired",
         );
 
-        // Update the local proposal status
-        setProposals((prev) =>
-          prev.map((proposal) =>
-            proposal.id === applicationId
-              ? { ...proposal, status: status as Proposal["status"] }
-              : proposal,
-          ),
-        );
+        if (status === "hired") {
+          // Backend rejected all others for this job — re-fetch to reflect that
+          const jobId = proposals.find((p) => p.id === applicationId)?.job_id;
+          if (jobId) {
+            const token2 = localStorage.getItem("token")!;
+            const applications = await getApplicationsByJob(token2, jobId);
+            const transformed = applications.map((app: any) => ({
+              id: app.applicationID,
+              talent_id: app.talent_id || 0,
+              talent_name: app.name,
+              talent_email: app.email,
+              cover_letter: app.cover_letter ?? "",
+              proposal: app.proposal ?? "",
+              status: app.status,
+              applied_at: app.applied_at,
+              tokens_used: app.tokens_used ?? 0,
+              job_id: jobId,
+            }));
+            setProposals(transformed);
+          }
+        } else {
+          setProposals((prev) =>
+            prev.map((p) =>
+              p.id === applicationId ? { ...p, status: status as Proposal["status"] } : p,
+            ),
+          );
+        }
 
         return true;
       } catch (err: any) {
@@ -87,7 +96,7 @@ export const useProposals = () => {
         setLoading(false);
       }
     },
-    [],
+    [proposals],
   );
 
   const clearProposals = useCallback(() => {

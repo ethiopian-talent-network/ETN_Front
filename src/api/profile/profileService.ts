@@ -288,31 +288,103 @@ export class ProfileService {
 
   // Format profile completion percentage
   getProfileCompletionPercentage(profile: ProfileData): number {
-    const fields = [
-      profile.name,
-      profile.title,
-      profile.location,
-      profile.hourlyRate,
-      profile.bio,
+    // Basic profile fields (each worth 10%)
+    const basicFields = [
+      { field: profile.name, weight: 2, name: "Name" },
+      { field: profile.title, weight: 2, name: "Title" },
+      { field: profile.location, weight: 1, name: "Location" },
+      { field: profile.hourlyRate, weight: 1, name: "Hourly Rate" },
+      { field: profile.bio, weight: 2, name: "Bio" },
+      { field: profile.about, weight: 1, name: "About" },
+      { field: profile.experience, weight: 1, name: "Experience" },
+      { field: profile.educationText, weight: 1, name: "Education Details" },
+      { field: profile.languagesText, weight: 1, name: "Language Details" },
+      { field: profile.linkedin, weight: 1, name: "LinkedIn" },
+      { field: profile.github, weight: 1, name: "GitHub" },
+      { field: profile.resume_url, weight: 1, name: "Resume" },
     ];
 
-    const completedFields = fields.filter(
-      (field) => field && field.trim().length > 0,
-    ).length;
-    const hasSkills = profile.skills.length > 0;
-    const hasEducation = profile.education.length > 0;
-    const hasPortfolio = profile.portfolio.length > 0;
-    const hasLanguages = profile.languages.length > 0;
+    // Calculate basic fields completion
+    const basicCompleted = basicFields.reduce((acc, { field, weight }) => {
+      return acc + (field && field.trim().length > 0 ? weight : 0);
+    }, 0);
 
-    const totalFields = 5 + 4; // basic fields + skills, education, portfolio, languages
-    const completedTotal =
-      completedFields +
-      (hasSkills ? 1 : 0) +
-      (hasEducation ? 1 : 0) +
-      (hasPortfolio ? 1 : 0) +
-      (hasLanguages ? 1 : 0);
+    // Section completions (each worth 10%)
+    let sectionCompleted = 0;
 
-    return Math.round((completedTotal / totalFields) * 100);
+    // Skills section (10%)
+    if (profile.skills && profile.skills.length > 0) {
+      sectionCompleted += 2;
+    }
+
+    // Languages section (10%)
+    if (profile.languages && profile.languages.length > 0) {
+      sectionCompleted += 2;
+    }
+
+    // Education section (10%)
+    if (profile.education && profile.education.length > 0) {
+      sectionCompleted += 2;
+    }
+
+    // Certifications section (10%)
+    if (profile.certifications && profile.certifications.length > 0) {
+      sectionCompleted += 2;
+    }
+
+    // Portfolio section (10%)
+    if (profile.portfolio && profile.portfolio.length > 0) {
+      sectionCompleted += 2;
+    }
+
+    // Profile image (10%)
+    const hasProfileImage = profile.profile_image || profile.image;
+    if (hasProfileImage) {
+      sectionCompleted += 2;
+    }
+
+    // Total possible score: 20 (basic) + 10 (sections) = 30
+    const totalPossible = 30;
+    const currentScore = basicCompleted + sectionCompleted;
+
+    // Convert to percentage (multiply by 3.33 to get to 100%)
+    const percentage = Math.round((currentScore / totalPossible) * 100);
+
+    return Math.min(percentage, 100);
+  }
+
+  // Get missing profile fields
+  getMissingFields(profile: ProfileData): {
+    basic: string[];
+    sections: string[];
+  } {
+    const missingBasic: string[] = [];
+    const missingSections: string[] = [];
+
+    // Check basic fields
+    if (!profile.name || profile.name.trim().length === 0) missingBasic.push("Name");
+    if (!profile.title || profile.title.trim().length === 0) missingBasic.push("Title");
+    if (!profile.location || profile.location.trim().length === 0) missingBasic.push("Location");
+    if (!profile.hourlyRate || profile.hourlyRate.trim().length === 0) missingBasic.push("Hourly Rate");
+    if (!profile.bio || profile.bio.trim().length === 0) missingBasic.push("Bio");
+    if (!profile.about || profile.about.trim().length === 0) missingBasic.push("About");
+    if (!profile.experience || profile.experience.trim().length === 0) missingBasic.push("Experience");
+    if (!profile.linkedin || profile.linkedin.trim().length === 0) missingBasic.push("LinkedIn");
+    if (!profile.github || profile.github.trim().length === 0) missingBasic.push("GitHub");
+    if (!profile.resume_url || profile.resume_url.trim().length === 0) missingBasic.push("Resume");
+
+    // Check sections
+    if (!profile.skills || profile.skills.length === 0) missingSections.push("Skills");
+    if (!profile.languages || profile.languages.length === 0) missingSections.push("Languages");
+    if (!profile.education || profile.education.length === 0) missingSections.push("Education");
+    if (!profile.certifications || profile.certifications.length === 0) missingSections.push("Certifications");
+    if (!profile.portfolio || profile.portfolio.length === 0) missingSections.push("Portfolio");
+    if (!profile.profile_image && !profile.image) missingSections.push("Profile Image");
+
+    return {
+      basic: missingBasic,
+      sections: missingSections,
+    };
   }
 }
 

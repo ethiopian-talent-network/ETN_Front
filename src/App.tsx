@@ -4,19 +4,25 @@ import Signup from "./pages/signup";
 import Landing from "./pages/landing";
 import OtpVerification from "./pages/otp-verification";
 import EmployerDashboard from "./pages/employer/EmployerDashboard";
-import FreelancerDashboard from "./features/dashboard/FreelancerDashboard";
+import FreelancerDashboard from "./features/talents/FreelancerDashboard";
+import TalentsDashboard from "./features/talents/TalentsDashboard";
+import TalentNetwork from "./features/talents/TalentNetwork";
+import TalentDiscovery from "./features/talents/TalentDiscovery";
 import MessagingPage from "./features/messaging/MessagingPage";
 import JobPosting from "./pages/JobPosting";
 import FreelancerPublicProfile from "./pages/talentPublicProfile";
 import TalentProfile from "./pages/talentProfile";
-import MyApplications from "./components/talent/MyApplications";
-import Billing from "./components/talent/Billing";
+import MyApplications from "./pages/MyApplications";
+import Billing from "./pages/Billing";
 import JobApplications from "./pages/JobApplications";
 import ApplyToJob from "./pages/ApplyToJob";
 import ProposalsPage from "./pages/employer/ProposalsPage";
+import AllProposalsPage from "./features/employer/components/ProposalsPage";
+import Portfolio from "./pages/Portfolio";
 import { DarkModeProvider } from "./contexts/DarkModeContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/routes/ProtectedRoute";
+import { PublicOnlyRoute } from "./components/routes/PublicOnlyRoute";
 import { ErrorBoundary } from "./components/error/ErrorBoundary";
 import { NotFound } from "./components/error/NotFound";
 import { Unauthorized } from "./components/error/Unauthorized";
@@ -36,11 +42,29 @@ function App() {
             <Routes>
               {/* Public routes */}
               <Route path={PUBLIC_ROUTES.HOME.path} element={<Landing />} />
-              <Route path={PUBLIC_ROUTES.LOGIN.path} element={<Login />} />
-              <Route path={PUBLIC_ROUTES.SIGNUP.path} element={<Signup />} />
+              <Route
+                path={PUBLIC_ROUTES.LOGIN.path}
+                element={
+                  <PublicOnlyRoute>
+                    <Login />
+                  </PublicOnlyRoute>
+                }
+              />
+              <Route
+                path={PUBLIC_ROUTES.SIGNUP.path}
+                element={
+                  <PublicOnlyRoute>
+                    <Signup />
+                  </PublicOnlyRoute>
+                }
+              />
               <Route
                 path={PUBLIC_ROUTES.OTP_VERIFICATION.path}
-                element={<OtpVerification />}
+                element={
+                  <PublicOnlyRoute>
+                    <OtpVerification />
+                  </PublicOnlyRoute>
+                }
               />
               <Route
                 path={PUBLIC_ROUTES.PUBLIC_PROFILE.path}
@@ -53,6 +77,22 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["talent"]}>
                     <FreelancerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path={TALENT_ROUTES.NETWORK.path}
+                element={
+                  <ProtectedRoute allowedRoles={["talent"]}>
+                    <TalentNetwork />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path={TALENT_ROUTES.DISCOVER.path}
+                element={
+                  <ProtectedRoute allowedRoles={["talent"]}>
+                    <TalentDiscovery />
                   </ProtectedRoute>
                 }
               />
@@ -82,13 +122,25 @@ function App() {
               />
               <Route
                 path={TALENT_ROUTES.APPLY_JOB.path}
-                element={<ApplyToJob />}
+                element={
+                  <ProtectedRoute allowedRoles={["talent"]}>
+                    <ApplyToJob />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path={TALENT_ROUTES.BILLING.path}
                 element={
                   <ProtectedRoute allowedRoles={["talent"]}>
                     <Billing />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path={TALENT_ROUTES.PORTFOLIO.path}
+                element={
+                  <ProtectedRoute allowedRoles={["talent"]}>
+                    <Portfolio />
                   </ProtectedRoute>
                 }
               />
@@ -133,6 +185,14 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["employer"]}>
                     <ProposalsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path={EMPLOYER_ROUTES.ALL_PROPOSALS.path}
+                element={
+                  <ProtectedRoute allowedRoles={["employer"]}>
+                    <AllProposalsPage />
                   </ProtectedRoute>
                 }
               />

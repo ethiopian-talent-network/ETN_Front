@@ -18,6 +18,7 @@ interface Proposal {
   talent_id: number;
   talent_name: string;
   talent_email: string;
+  profile_image: string;
   profile_title: string;
   hourly_rate: string;
   talent_location: string;
@@ -26,6 +27,15 @@ interface Proposal {
   status: string;
   applied_at: string;
   job_id: number;
+  fullName?: string;
+  about?: string;
+  skills?: string;
+  experience?: string;
+  education?: string;
+  languages?: string;
+  linkedin?: string;
+  github?: string;
+  resume_url?: string;
 }
 
 const ProposalsPage: React.FC = () => {
@@ -58,20 +68,29 @@ const ProposalsPage: React.FC = () => {
 
       // Transform the response to match the Proposal interface
       const transformedProposals = applications.map((app: any) => ({
-        id: app.application_id,
+        id: app.applicationID,
         talent_id: app.talent_id || 0,
-        talent_name: app.talent_name,
+        talent_name: app.name,
         talent_email: app.email,
-        profile_title: "", // Not available in current API response
-        hourly_rate: "", // Not available in current API response
-        talent_location: "", // Not available in current API response
+        profile_image: app.profile_image || "",
+        profile_title: "",
+        hourly_rate: "",
+        talent_location: "",
         cover_letter: app.cover_letter,
         proposal: app.proposal,
         status: app.status,
         applied_at: app.applied_at,
         job_id: parseInt(jobId!),
+        fullName: app.talent_full_name,
+        about: app.about,
+        skills: app.skills,
+        experience: app.experience,
+        education: app.education,
+        languages: app.languages,
+        linkedin: app.linkedin,
+        github: app.github,
+        resume_url: app.resume_url,
       }));
-
       setProposals(transformedProposals);
     } catch (err: any) {
       setError(err.message || "Failed to fetch proposals");
@@ -234,28 +253,42 @@ const ProposalsPage: React.FC = () => {
                       }`}
                       onClick={() => setSelectedProposal(proposal)}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center mb-2">
-                            <User className="h-4 w-4 text-gray-400 mr-2" />
-                            <h3 className="font-medium text-gray-900">
-                              {proposal.talent_name}
-                            </h3>
+                      <div className="flex items-start space-x-3">
+                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {proposal.profile_image ? (
+                            <img
+                              src={proposal.profile_image}
+                              alt={proposal.talent_name}
+                              className="h-10 w-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-blue-600 font-semibold text-sm">
+                              {proposal.talent_name?.charAt(0).toUpperCase() || "?"}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-gray-900 truncate">
+                            {proposal.talent_name}
+                          </h3>
+                          <div className="flex items-center text-sm text-gray-500 mt-1">
+                            <Mail className="h-3 w-3 mr-1" />
+                            <span className="truncate">
+                              {proposal.talent_email}
+                            </span>
                           </div>
-                          <div className="flex items-center text-sm text-gray-500 mb-2">
-                            <Mail className="h-4 w-4 mr-1" />
-                            {proposal.talent_email}
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="text-xs text-gray-400">
+                              {new Date(
+                                proposal.applied_at,
+                              ).toLocaleDateString()}
+                            </span>
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(proposal.status)}`}
+                            >
+                              {proposal.status}
+                            </span>
                           </div>
-                          <div className="flex items-center text-sm text-gray-500 mb-2">
-                            <Calendar className="h-4 w-4 mr-1" />
-                            Applied{" "}
-                            {new Date(proposal.applied_at).toLocaleDateString()}
-                          </div>
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(proposal.status)}`}
-                          >
-                            {proposal.status}
-                          </span>
                         </div>
                       </div>
                     </div>
@@ -279,14 +312,30 @@ const ProposalsPage: React.FC = () => {
                         {selectedProposal.status}
                       </span>
                     </div>
-                    <div className="flex items-center text-gray-600 mb-4">
-                      <User className="h-5 w-5 mr-2" />
-                      <span className="font-medium">
-                        {selectedProposal.talent_name}
-                      </span>
-                      <span className="mx-2">•</span>
-                      <Mail className="h-4 w-4 mr-1" />
-                      {selectedProposal.talent_email}
+                    {/* Talent Profile Card */}
+                    <div className="flex items-start space-x-4 mb-6 bg-gray-50 rounded-lg p-4">
+                      <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
+                        {selectedProposal.profile_image ? (
+                          <img
+                            src={selectedProposal.profile_image}
+                            alt={selectedProposal.talent_name}
+                            className="h-16 w-16 rounded-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-blue-600 font-bold text-xl">
+                            {selectedProposal.talent_name?.charAt(0).toUpperCase() || "?"}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {selectedProposal.talent_name}
+                        </h3>
+                        <div className="flex items-center text-sm text-gray-500 mt-1">
+                          <Mail className="h-4 w-4 mr-1" />
+                          {selectedProposal.talent_email}
+                        </div>
+                      </div>
                     </div>
                     <div className="flex items-center text-sm text-gray-500">
                       <Calendar className="h-4 w-4 mr-1" />
@@ -302,6 +351,220 @@ const ProposalsPage: React.FC = () => {
                   </div>
 
                   <div className="p-6 space-y-6">
+                    {/* About Talent */}
+                    {selectedProposal.about && (
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center">
+                          <User className="h-5 w-5 mr-2" />
+                          About Talent
+                        </h3>
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <p className="text-gray-700 whitespace-pre-wrap">
+                            {selectedProposal.about}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Skills */}
+                    {selectedProposal.skills && (
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center">
+                          <svg
+                            className="h-5 w-5 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                            />
+                          </svg>
+                          Skills
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedProposal.skills
+                            .split(",")
+                            .map((skill: string, idx: number) => (
+                              <span
+                                key={idx}
+                                className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
+                              >
+                                {skill.trim()}
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Experience */}
+                    {selectedProposal.experience && (
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center">
+                          <Briefcase className="h-5 w-5 mr-2" />
+                          Experience
+                        </h3>
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <p className="text-gray-700 whitespace-pre-wrap">
+                            {selectedProposal.experience}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Education */}
+                    {selectedProposal.education && (
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center">
+                          <svg
+                            className="h-5 w-5 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 14l9-5-9-5-9 5 9 5z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"
+                            />
+                          </svg>
+                          Education
+                        </h3>
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <p className="text-gray-700 whitespace-pre-wrap">
+                            {selectedProposal.education}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Languages */}
+                    {selectedProposal.languages && (
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center">
+                          <svg
+                            className="h-5 w-5 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                            />
+                          </svg>
+                          Languages
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedProposal.languages
+                            .split(",")
+                            .map((lang: string, idx: number) => (
+                              <span
+                                key={idx}
+                                className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium"
+                              >
+                                {lang.trim()}
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Links */}
+                    {(selectedProposal.linkedin ||
+                      selectedProposal.github ||
+                      selectedProposal.resume_url) && (
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center">
+                          <svg
+                            className="h-5 w-5 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                            />
+                          </svg>
+                          Links
+                        </h3>
+                        <div className="flex flex-wrap gap-3">
+                          {selectedProposal.linkedin && (
+                            <a
+                              href={selectedProposal.linkedin}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                            >
+                              <svg
+                                className="h-4 w-4 mr-2"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                              </svg>
+                              LinkedIn
+                            </a>
+                          )}
+                          {selectedProposal.github && (
+                            <a
+                              href={selectedProposal.github}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 text-sm"
+                            >
+                              <svg
+                                className="h-4 w-4 mr-2"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                              </svg>
+                              GitHub
+                            </a>
+                          )}
+                          {selectedProposal.resume_url && (
+                            <a
+                              href={selectedProposal.resume_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+                            >
+                              <svg
+                                className="h-4 w-4 mr-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                />
+                              </svg>
+                              Resume
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Cover Letter */}
                     <div>
                       <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center">

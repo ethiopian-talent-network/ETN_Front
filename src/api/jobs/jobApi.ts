@@ -1,4 +1,4 @@
-import type { Job } from "../../features/dashboard/types";
+import type { Job } from "../../features/talents/types";
 import { API_BASE_URL, validateApiConfig } from "../../config/api";
 
 // Helper function to get auth headers

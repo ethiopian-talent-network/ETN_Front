@@ -12,7 +12,7 @@ import {
   getJobApplicationDetails,
   submitApplication,
 } from "../../api/jobs/jobApi";
-import type { Job } from "../../features/dashboard/types";
+import type { Job } from "../../features/talents/types";
 
 interface ApplicationDetails {
   job: Job & {

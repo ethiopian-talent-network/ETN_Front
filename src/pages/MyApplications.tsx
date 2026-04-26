@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
-import { useDarkMode } from "../../contexts/DarkModeContext";
+import { useDarkMode } from "../contexts/DarkModeContext";
 import {
   Clock,
   DollarSign,
@@ -13,7 +13,7 @@ import {
   Briefcase,
   Search,
 } from "lucide-react";
-import { getUserApplications } from "../../api/jobs/jobApi";
+import { getUserApplications } from "../api/jobs/jobApi";
 
 type ApplicationStatus = "pending" | "accepted" | "rejected" | "shortlisted";
 

@@ -11,23 +11,59 @@ export const profileApi = {
   // Get profile data from backend
   async getProfile(): Promise<ProfileData> {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/talents/talentProfile`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeaders(),
-          },
-        },
-      );
+      const headers = {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      };
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const [profileRes, certsRes, portfolioRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/talents/talentProfile`, { headers }),
+        fetch(`${API_BASE_URL}/api/talents/certificates`, { headers }),
+        fetch(`${API_BASE_URL}/api/talents/portfolio`, { headers }),
+      ]);
+
+      if (!profileRes.ok) throw new Error(`HTTP error! status: ${profileRes.status}`);
+
+      const profileResult = await profileRes.json();
+      const raw = profileResult.data || profileResult;
+
+      // Normalize field names: backend uses Location/HourlyRate (capital)
+      const profile: ProfileData = {
+        ...raw,
+        location: raw.Location || raw.location || "",
+        hourlyRate: raw.HourlyRate != null ? raw.HourlyRate.toString() : (raw.hourlyRate || ""),
+      };
+
+      // Merge certificates so completion score reflects real data
+      if (certsRes.ok) {
+        const certsResult = await certsRes.json();
+        const certs = certsResult.data || [];
+        profile.certifications = certs.map((c: any) => ({
+          id: c.id,
+          name: c.title,
+          issuer: c.organization || "",
+          year: c.issue_date ? new Date(c.issue_date).getFullYear().toString() : "",
+        }));
+      } else {
+        profile.certifications = profile.certifications || [];
       }
 
-      const result = await response.json();
-      return result.data || result;
+      // Merge portfolio so completion score reflects real data
+      if (portfolioRes.ok) {
+        const portfolioResult = await portfolioRes.json();
+        const items = portfolioResult.data || [];
+        profile.portfolio = items.map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          description: p.description || "",
+          image: p.image_url || "",
+          url: p.project_url || "",
+        }));
+      } else {
+        profile.portfolio = profile.portfolio || [];
+      }
+
+      return profile;
     } catch (error) {
       console.error("Error fetching profile:", error);
       throw error;

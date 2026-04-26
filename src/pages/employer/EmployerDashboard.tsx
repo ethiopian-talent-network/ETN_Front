@@ -16,51 +16,28 @@ import { TalentProfileModal } from "../../features/employer/components/TalentPro
 import { TalentList } from "../../features/employer/components/TalentList";
 import { ContractList } from "../../features/employer/components/ContractList";
 import { Header } from "../../features/employer/components/Header";
-import { EmptyState } from "../../features/employer/components/EmptyState";
-import type {
-  TabType,
-  EmployerStats,
-  Job,
-  Talent,
-  Contract,
-} from "../../features/employer/types/employer.types";
-
-// Mock data for contracts (replace with actual API calls)
+import type { TabType, EmployerStats, Job, Talent, Contract } from "../../features/employer/types/employer.types";
 
 const mockContracts: Contract[] = [
   {
-    id: 1,
-    job_id: 1,
-    talent_id: 1,
-    talent_name: "John Doe",
-    job_title: "Senior React Developer",
-    status: "active",
-    start_date: "2024-01-01",
-    end_date: "2024-03-01",
-    total_value: 15000,
-    earnings: 7500,
-    progress: 50,
-    created_at: "2024-01-01",
+    id: 1, job_id: 1, talent_id: 1, talent_name: "John Doe",
+    job_title: "Senior React Developer", status: "active",
+    start_date: "2024-01-01", end_date: "2024-03-01",
+    total_value: 15000, earnings: 7500, progress: 50, created_at: "2024-01-01",
   },
   {
-    id: 2,
-    job_id: 2,
-    talent_id: 2,
-    talent_name: "Jane Smith",
-    job_title: "Full Stack Developer",
-    status: "completed",
-    start_date: "2023-10-01",
-    end_date: "2023-12-01",
-    total_value: 12000,
-    earnings: 12000,
-    progress: 100,
-    created_at: "2023-10-01",
+    id: 2, job_id: 2, talent_id: 2, talent_name: "Jane Smith",
+    job_title: "Full Stack Developer", status: "completed",
+    start_date: "2023-10-01", end_date: "2023-12-01",
+    total_value: 12000, earnings: 12000, progress: 100, created_at: "2023-10-01",
   },
 ];
 
 export const EmployerDashboard: React.FC = () => {
   const { darkMode } = useDarkMode();
   const navigate = useNavigate();
+  const dm = darkMode;
+
   const [activeTab, setActiveTab] = useState<TabType>("jobs");
   const [showJobModal, setShowJobModal] = useState(false);
   const [showProposalsModal, setShowProposalsModal] = useState(false);
@@ -68,113 +45,36 @@ export const EmployerDashboard: React.FC = () => {
   const [selectedTalentId, setSelectedTalentId] = useState<number | null>(null);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
 
-  // Custom hooks
-  const {
-    jobs,
-    loading: jobsLoading,
-    error: jobsError,
-    fetchJobs,
-    createNewJob,
-    updateExistingJob,
-    deleteExistingJob,
-  } = useJobs();
-  const {
-    proposals,
-    loading: proposalsLoading,
-    error: proposalsError,
-    fetchProposals,
-    updateProposalStatus,
-    clearProposals,
-  } = useProposals();
+  const { jobs, loading: jobsLoading, error: jobsError, fetchJobs, createNewJob, updateExistingJob, deleteExistingJob } = useJobs();
+  const { proposals, loading: proposalsLoading, error: proposalsError, fetchProposals, updateProposalStatus, clearProposals } = useProposals();
   const { categories } = useCategories();
-  const {
-    talents,
-    loading: talentsLoading,
-    error: talentsError,
-    getTalents,
-    clearTalents,
-  } = useTalents();
+  const { talents, loading: talentsLoading, error: talentsError, getTalents } = useTalents();
 
-  // Calculate stats
   const stats: EmployerStats = {
     totalJobs: jobs.length,
-    activeJobs: jobs.filter((job) => job.status === "active").length,
-    totalProposals: jobs.reduce(
-      (sum, job) => sum + (job.applications_count || 0),
-      0,
-    ),
-    activeContracts: mockContracts.filter(
-      (contract) => contract.status === "active",
-    ).length,
+    activeJobs: jobs.filter((j) => j.status === "active").length,
+    totalProposals: jobs.reduce((s, j) => s + (j.applications_count || 0), 0),
+    activeContracts: mockContracts.filter((c) => c.status === "active").length,
   };
 
-  // Fetch jobs on component mount
-  useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
-
-  // Fetch talents when talents tab is active
-  useEffect(() => {
-    if (activeTab === "talents") {
-      getTalents();
-    }
-  }, [activeTab, getTalents]);
-
-  // Handle job actions
-  const handleCreateJob = () => {
-    navigate(EMPLOYER_ROUTES.POST_JOB.path);
+  const tabCounts = {
+    jobs: jobs.length,
+    proposals: stats.totalProposals,
+    talents: talents.length,
+    contracts: mockContracts.length,
   };
 
-  const handleEditJob = (job: Job) => {
-    setEditingJob(job);
-    setShowJobModal(true);
-  };
+  useEffect(() => { fetchJobs(); }, [fetchJobs]);
+  useEffect(() => { if (activeTab === "talents") getTalents(); }, [activeTab, getTalents]);
 
-  const handleDeleteJob = async (job: Job) => {
-    if (window.confirm("Are you sure you want to delete this job?")) {
-      await deleteExistingJob(job.id);
-    }
-  };
-
-  const handleViewDetails = (job: Job) => {
-    // Implement job details view
-    console.log("View details for job:", job);
-  };
-
-  const handleViewProposals = (job: Job) => {
-    console.log("Navigating to proposals for job:", job);
-    console.log("Job ID:", job.id);
-    navigate(
-      EMPLOYER_ROUTES.PROPOSALS.path.replace(":jobId", job.id.toString()),
-    );
-  };
+  const handleViewProposals = (job: Job) =>
+    navigate(EMPLOYER_ROUTES.PROPOSALS.path.replace(":jobId", job.id.toString()));
 
   const handleJobSubmit = async (jobData: any) => {
     const success = editingJob
       ? await updateExistingJob(editingJob.id, jobData)
       : await createNewJob(jobData);
-
-    if (success) {
-      setShowJobModal(false);
-      setEditingJob(null);
-    }
-  };
-
-  const handleUpdateProposalStatus = async (
-    proposalId: number,
-    status: string,
-  ) => {
-    await updateProposalStatus(proposalId, status);
-  };
-
-  const handleCloseProposalsModal = () => {
-    setShowProposalsModal(false);
-    clearProposals();
-  };
-
-  const handleInviteTalent = (talent: Talent) => {
-    // Implement talent invitation logic
-    console.log("Invite talent:", talent);
+    if (success) { setShowJobModal(false); setEditingJob(null); }
   };
 
   const handleViewTalentProfile = (talentId: number) => {
@@ -182,115 +82,84 @@ export const EmployerDashboard: React.FC = () => {
     setShowTalentProfileModal(true);
   };
 
-  const handleViewContractDetails = (contract: Contract) => {
-    // Implement contract details view
-    console.log("View contract details:", contract);
-  };
-
-  // Render tab content
   const renderTabContent = () => {
     switch (activeTab) {
       case "jobs":
         return (
           <JobList
-            jobs={jobs}
-            loading={jobsLoading}
-            error={jobsError}
-            darkMode={darkMode}
-            onViewDetails={handleViewDetails}
-            onEdit={handleEditJob}
-            onDelete={handleDeleteJob}
+            jobs={jobs} loading={jobsLoading} error={jobsError} darkMode={dm}
+            onViewDetails={() => {}}
+            onEdit={(job) => { setEditingJob(job); setShowJobModal(true); }}
+            onDelete={async (job) => { if (window.confirm("Delete this job?")) await deleteExistingJob(job.id); }}
             onViewProposals={handleViewProposals}
           />
         );
       case "proposals":
-        return <ProposalsPage darkMode={darkMode} />;
+        return <ProposalsPage darkMode={dm} />;
       case "talents":
         return (
           <TalentList
-            talents={talents}
-            loading={talentsLoading}
-            error={talentsError}
-            darkMode={darkMode}
-            onInviteTalent={handleInviteTalent}
+            talents={talents} loading={talentsLoading} error={talentsError} darkMode={dm}
+            onInviteTalent={() => {}}
             onViewProfile={handleViewTalentProfile}
           />
         );
       case "contracts":
-        return (
-          <ContractList
-            contracts={mockContracts}
-            darkMode={darkMode}
-            onViewDetails={handleViewContractDetails}
-          />
-        );
+        return <ContractList contracts={mockContracts} darkMode={dm} onViewDetails={() => {}} />;
       default:
         return null;
     }
   };
 
   return (
-    <div
-      className={`min-h-screen transition-colors duration-300 ${
-        darkMode ? "bg-gray-900" : "bg-gray-50"
-      }`}
-    >
+    <div className={`min-h-screen ${dm ? "bg-gray-900" : "bg-gray-50"}`}>
+      <Header />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <Header
-          title="Employer Dashboard"
-          subtitle="Manage your jobs, proposals, and contracts"
-          action={{
-            label: "Create Job",
-            onClick: handleCreateJob,
-          }}
-          darkMode={darkMode}
-        />
+        {/* Page title */}
+        <div className="mb-6">
+          <h1 className={`text-2xl font-bold ${dm ? "text-white" : "text-gray-900"}`}>Dashboard</h1>
+          <p className={`text-sm mt-0.5 ${dm ? "text-gray-400" : "text-gray-500"}`}>
+            Manage your jobs, review applications, and hire top talent.
+          </p>
+        </div>
 
-        {/* Stats Cards */}
-        <StatsCards stats={stats} darkMode={darkMode} />
+        <StatsCards stats={stats} darkMode={dm} />
 
-        {/* Tabs Navigation */}
-        <TabsNavigation
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          darkMode={darkMode}
-        />
+        {/* Tabs + content */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <TabsNavigation activeTab={activeTab} setActiveTab={setActiveTab} darkMode={dm} counts={tabCounts} />
+        </div>
 
-        {/* Tab Content */}
-        <div className="mt-8">{renderTabContent()}</div>
-
-        {/* Job Form Modal */}
-        <JobFormModal
-          isOpen={showJobModal}
-          onClose={() => setShowJobModal(false)}
-          onSubmit={handleJobSubmit}
-          editingJob={editingJob}
-          categories={categories}
-          loading={jobsLoading}
-          darkMode={darkMode}
-        />
-
-        {/* Proposals Modal */}
-        <ProposalsModal
-          isOpen={showProposalsModal}
-          onClose={handleCloseProposalsModal}
-          proposals={proposals}
-          loading={proposalsLoading}
-          error={proposalsError}
-          onUpdateStatus={handleUpdateProposalStatus}
-          onViewProfile={handleViewTalentProfile}
-          darkMode={darkMode}
-        />
-
-        {/* Talent Profile Modal */}
-        <TalentProfileModal
-          isOpen={showTalentProfileModal}
-          onClose={() => setShowTalentProfileModal(false)}
-          talentId={selectedTalentId}
-          darkMode={darkMode}
-        />
+        {renderTabContent()}
       </div>
+
+      {/* Modals */}
+      <JobFormModal
+        isOpen={showJobModal}
+        onClose={() => { setShowJobModal(false); setEditingJob(null); }}
+        onSubmit={handleJobSubmit}
+        editingJob={editingJob}
+        categories={categories}
+        loading={jobsLoading}
+        darkMode={dm}
+      />
+      <ProposalsModal
+        isOpen={showProposalsModal}
+        onClose={() => { setShowProposalsModal(false); clearProposals(); }}
+        proposals={proposals}
+        loading={proposalsLoading}
+        error={proposalsError}
+        onUpdateStatus={updateProposalStatus}
+        onViewProfile={handleViewTalentProfile}
+        darkMode={dm}
+      />
+      <TalentProfileModal
+        isOpen={showTalentProfileModal}
+        onClose={() => setShowTalentProfileModal(false)}
+        talentId={selectedTalentId}
+        darkMode={dm}
+      />
     </div>
   );
 };

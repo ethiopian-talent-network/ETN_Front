@@ -1,85 +1,90 @@
-import React from 'react';
-import type { EmployerStats } from '../types/employer.types';
+import React from "react";
+import { Briefcase, CheckCircle, FileText, Users } from "lucide-react";
+import type { EmployerStats } from "../types/employer.types";
 
 interface StatsCardsProps {
   stats: EmployerStats;
   darkMode?: boolean;
 }
 
+const cards = [
+  {
+    key: "totalJobs" as const,
+    label: "Total Jobs",
+    icon: Briefcase,
+    color: "blue",
+    bg: "bg-blue-50",
+    iconColor: "text-blue-600",
+    darkBg: "bg-blue-900/20",
+    darkIcon: "text-blue-400",
+    border: "border-blue-100",
+    darkBorder: "border-blue-900/30",
+  },
+  {
+    key: "activeJobs" as const,
+    label: "Active Jobs",
+    icon: CheckCircle,
+    color: "green",
+    bg: "bg-emerald-50",
+    iconColor: "text-emerald-600",
+    darkBg: "bg-emerald-900/20",
+    darkIcon: "text-emerald-400",
+    border: "border-emerald-100",
+    darkBorder: "border-emerald-900/30",
+  },
+  {
+    key: "totalProposals" as const,
+    label: "Applications",
+    icon: FileText,
+    color: "purple",
+    bg: "bg-violet-50",
+    iconColor: "text-violet-600",
+    darkBg: "bg-violet-900/20",
+    darkIcon: "text-violet-400",
+    border: "border-violet-100",
+    darkBorder: "border-violet-900/30",
+  },
+  {
+    key: "activeContracts" as const,
+    label: "Active Contracts",
+    icon: Users,
+    color: "orange",
+    bg: "bg-amber-50",
+    iconColor: "text-amber-600",
+    darkBg: "bg-amber-900/20",
+    darkIcon: "text-amber-400",
+    border: "border-amber-100",
+    darkBorder: "border-amber-900/30",
+  },
+];
+
 export const StatsCards: React.FC<StatsCardsProps> = ({ stats, darkMode = false }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div className={`p-6 rounded-lg border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Total Jobs
-            </p>
-            <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-              {stats.totalJobs}
-            </p>
-          </div>
-          <div className={`p-3 rounded-full ${darkMode ? 'bg-blue-900' : 'bg-blue-100'}`}>
-            <svg className={`w-6 h-6 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A8.001 8.001 0 0012 5.078M21 13.255A8.001 8.001 0 0112 21.432M21 13.255A8.001 8.001 0 0012 5.078M21 13.255A8.001 8.001 0 0112 21.432" />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div className={`p-6 rounded-lg border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Active Jobs
-            </p>
-            <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-              {stats.activeJobs}
-            </p>
-          </div>
-          <div className={`p-3 rounded-full ${darkMode ? 'bg-green-900' : 'bg-green-100'}`}>
-            <svg className={`w-6 h-6 ${darkMode ? 'text-green-400' : 'text-green-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {cards.map(({ key, label, icon: Icon, bg, iconColor, darkBg, darkIcon, border, darkBorder }) => (
+        <div
+          key={key}
+          className={`rounded-xl border p-5 transition-shadow hover:shadow-md ${
+            darkMode
+              ? `bg-gray-800 border-gray-700`
+              : `bg-white border-gray-100 shadow-sm`
+          }`}
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                {label}
+              </p>
+              <p className={`text-3xl font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>
+                {stats[key]}
+              </p>
+            </div>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${darkMode ? darkBg : bg} border ${darkMode ? darkBorder : border}`}>
+              <Icon className={`w-5 h-5 ${darkMode ? darkIcon : iconColor}`} />
+            </div>
           </div>
         </div>
-      </div>
-
-      <div className={`p-6 rounded-lg border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Total Proposals
-            </p>
-            <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-              {stats.totalProposals}
-            </p>
-          </div>
-          <div className={`p-3 rounded-full ${darkMode ? 'bg-purple-900' : 'bg-purple-100'}`}>
-            <svg className={`w-6 h-6 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div className={`p-6 rounded-lg border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Active Contracts
-            </p>
-            <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-              {stats.activeContracts}
-            </p>
-          </div>
-          <div className={`p-3 rounded-full ${darkMode ? 'bg-orange-900' : 'bg-orange-100'}`}>
-            <svg className={`w-6 h-6 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-          </div>
-        </div>
-      </div>
+      ))}
     </div>
   );
 };

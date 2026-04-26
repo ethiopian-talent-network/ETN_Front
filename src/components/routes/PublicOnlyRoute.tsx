@@ -2,17 +2,14 @@ import { Navigate, useLocation } from "react-router";
 import { type ReactNode } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 
-interface ProtectedRouteProps {
+interface PublicOnlyRouteProps {
   children: ReactNode;
-  allowedRoles?: string[];
 }
 
-export const ProtectedRoute = ({
-  children,
-  allowedRoles,
-}: ProtectedRouteProps) => {
+export const PublicOnlyRoute = ({ children }: PublicOnlyRouteProps) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
+  const from = (location.state as any)?.from;
 
   if (isLoading) {
     return (
@@ -22,12 +19,10 @@ export const ProtectedRoute = ({
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
-  }
-
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/unauthorized" replace />;
+  if (isAuthenticated && user) {
+    if (from) return <Navigate to={from} replace />;
+    if (user.role === "employer") return <Navigate to="/employer-dashboard" replace />;
+    return <Navigate to="/talent-dashboard" replace />;
   }
 
   return <>{children}</>;

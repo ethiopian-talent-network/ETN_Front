@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { useDarkMode } from "../contexts/DarkModeContext";
+import { useAuth } from "../contexts/AuthContext";
 import {
   Search,
   Code,
@@ -31,6 +32,8 @@ import {
 
 export default function Landing() {
   const { darkMode, toggleDarkMode } = useDarkMode();
+  const { isAuthenticated, user, logout } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [userMode, setUserMode] = useState<"hire" | "work">("hire");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -185,11 +188,36 @@ export default function Landing() {
                 )}
               </button>
 
-              <Link to="/signup">
-                <Button className="bg-[#0084ca] hover:bg-[#006ba6] text-white rounded-full px-6">
-                  Sign up free
-                </Button>
-              </Link>
+              {isAuthenticated && user ? (
+                <>
+                  <Link
+                    to={user.role === "employer" ? "/employer-dashboard" : "/talent-dashboard"}
+                    className={`text-sm font-medium transition-colors ${darkMode ? "text-gray-300 hover:text-white" : "text-gray-700 hover:text-gray-900"}`}
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={() => { logout(); navigate("/login"); }}
+                    className={`text-sm font-medium transition-colors ${darkMode ? "text-gray-300 hover:text-white" : "text-gray-700 hover:text-gray-900"}`}
+                  >
+                    Log out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className={`text-sm font-medium transition-colors ${darkMode ? "text-gray-300 hover:text-white" : "text-gray-700 hover:text-gray-900"}`}
+                  >
+                    Log in
+                  </Link>
+                  <Link to="/signup">
+                    <Button className="bg-[#0084ca] hover:bg-[#006ba6] text-white rounded-full px-6">
+                      Sign up free
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
 
             <button
@@ -218,12 +246,14 @@ export default function Landing() {
               >
                 Find Work
               </Link>
-              <Link
-                to="/login"
-                className={`block py-2 font-medium transition-colors ${darkMode ? "text-gray-300 hover:text-white" : "text-gray-700 hover:text-gray-900"}`}
-              >
-                Log in
-              </Link>
+              {!isAuthenticated && (
+                <Link
+                  to="/login"
+                  className={`block py-2 font-medium transition-colors ${darkMode ? "text-gray-300 hover:text-white" : "text-gray-700 hover:text-gray-900"}`}
+                >
+                  Log in
+                </Link>
+              )}
               <div className="flex items-center justify-between py-2">
                 <span
                   className={`text-sm font-medium ${darkMode ? "text-gray-300" : "text-gray-700"}`}
@@ -245,11 +275,27 @@ export default function Landing() {
                   )}
                 </button>
               </div>
-              <Link to="/signup" className="block">
-                <Button className="w-full bg-[#0084ca] hover:bg-[#006ba6] text-white rounded-full">
-                  Sign up free
-                </Button>
-              </Link>
+              {isAuthenticated && user ? (
+                <>
+                  <Link to={user.role === "employer" ? "/employer-dashboard" : "/talent-dashboard"} className="block">
+                    <Button className="w-full bg-[#0084ca] hover:bg-[#006ba6] text-white rounded-full">
+                      Go to Dashboard
+                    </Button>
+                  </Link>
+                  <button
+                    onClick={() => { logout(); navigate("/login"); }}
+                    className={`block w-full text-left py-2 font-medium transition-colors ${darkMode ? "text-gray-300 hover:text-white" : "text-gray-700 hover:text-gray-900"}`}
+                  >
+                    Log out
+                  </button>
+                </>
+              ) : (
+                <Link to="/signup" className="block">
+                  <Button className="w-full bg-[#0084ca] hover:bg-[#006ba6] text-white rounded-full">
+                    Sign up free
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         )}

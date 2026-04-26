@@ -30,10 +30,6 @@ export interface Proposal {
   talent_id: number;
   talent_name: string;
   talent_email: string;
-  profile_title?: string;
-  hourly_rate?: string;
-  talent_location?: string;
-  profile_image?: string;
   cover_letter: string;
   proposal?: string;
   status: "pending" | "reviewed" | "shortlisted" | "rejected" | "hired";
@@ -43,6 +39,16 @@ export interface Proposal {
   job_title?: string;
   company_name?: string;
   company_location?: string;
+  // Talent profile details (from talents table)
+  fullName?: string;
+  about?: string;
+  skills?: string;
+  experience?: string;
+  education?: string;
+  languages?: string;
+  linkedin?: string;
+  github?: string;
+  resume_url?: string;
 }
 
 export interface Talent {

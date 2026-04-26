@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
-import { useDarkMode } from "../../contexts/DarkModeContext";
+import { useDarkMode } from "../contexts/DarkModeContext";
 import {
   ArrowRight,
   CreditCard,
@@ -18,8 +18,8 @@ import {
   upsertBillingInfo,
   deleteBillingInfo,
   type BillingInfo,
-} from "../../api/billing/billingApi";
-import { useAuth } from "../../contexts/AuthContext";
+} from "../api/billing/billingApi";
+import { useAuth } from "../contexts/AuthContext";
 
 type PayoutMethod = "telebirr" | "cbe_birr" | "bank";
 

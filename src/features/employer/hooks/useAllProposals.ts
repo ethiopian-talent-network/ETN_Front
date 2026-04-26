@@ -33,15 +33,24 @@ export const useAllProposals = () => {
           throw new Error("No authentication token found");
         }
 
-        const response = await fetchAllApplications(token, {
+        console.log("Fetching proposals with params:", {
           page,
           limit,
           status,
           search,
         });
+        const response = await fetchAllApplications(token, {
+          page,
+          limit,
+          ...(status && status !== "all" ? { status } : {}),
+          ...(search ? { search } : {}),
+        });
+        console.log("Response from API:", response);
+        console.log("Applications count:", response.applications?.length || 0);
         setProposals(response.applications || []);
         setPagination(response.pagination);
       } catch (err: any) {
+        console.error("Error fetching proposals:", err);
         setError(err.message || "Failed to fetch proposals");
       } finally {
         setLoading(false);
@@ -57,20 +66,25 @@ export const useAllProposals = () => {
 
       try {
         const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No authentication token found");
-        }
+        if (!token) throw new Error("No authentication token found");
 
         await updateApplicationStatus(token, applicationId, status);
 
-        // Update the local proposal status
-        setProposals((prev) =>
-          prev.map((proposal) =>
-            proposal.id === applicationId
-              ? { ...proposal, status: status as Proposal["status"] }
-              : proposal,
-          ),
-        );
+        if (status === "hired") {
+          // Backend rejected all others — do a full refresh to reflect that
+          const response = await fetchAllApplications(token, {
+            page: pagination.page,
+            limit: pagination.limit,
+          });
+          setProposals(response.applications || []);
+          setPagination(response.pagination);
+        } else {
+          setProposals((prev) =>
+            prev.map((p) =>
+              p.id === applicationId ? { ...p, status: status as Proposal["status"] } : p,
+            ),
+          );
+        }
 
         return true;
       } catch (err: any) {
@@ -80,7 +94,7 @@ export const useAllProposals = () => {
         setLoading(false);
       }
     },
-    [],
+    [pagination.page, pagination.limit],
   );
 
   const refreshProposals = useCallback(() => {

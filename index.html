@@ -4,6 +4,34 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ETN</title>
+    <style>
+      /* Prevent white flash on load - anti-flash styles */
+      html {
+        background-color: #111827; /* Default to dark background */
+      }
+      html.light {
+        background-color: #f9fafb;
+      }
+      /* If user prefers light mode and hasn't set explicit preference */
+      @media (prefers-color-scheme: light) {
+        html:not(.dark) {
+          background-color: #f9fafb;
+        }
+      }
+    </style>
+    <script>
+      // Apply dark mode class before React loads to prevent flash
+      (function () {
+        const savedDarkMode = localStorage.getItem("darkMode");
+        if (savedDarkMode === "true") {
+          document.documentElement.classList.add("dark");
+        } else if (savedDarkMode === "false") {
+          document.documentElement.classList.add("light");
+        } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
+          document.documentElement.classList.add("light");
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

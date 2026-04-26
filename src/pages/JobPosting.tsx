@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -14,16 +14,26 @@ import {
   AlertCircle,
   Coins,
 } from "lucide-react";
+import { API_BASE_URL } from "../config/api";
 
 export default function JobPosting() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/jobs/categories`)
+      .then((r) => r.json())
+      .then((data) => setCategories(data.data || []))
+      .catch(() => {});
+  }, []);
 
   const [jobData, setJobData] = useState({
     title: "",
     category: "",
+    category_id: 0,
     description: "",
     skills: [] as string[],
     scope: "large",
@@ -40,16 +50,6 @@ export default function JobPosting() {
   });
 
   const [currentSkill, setCurrentSkill] = useState("");
-
-  const categories = [
-    "Development & IT",
-    "Design & Creative",
-    "Sales & Marketing",
-    "Writing & Translation",
-    "Admin & Customer Support",
-    "Finance & Accounting",
-    "Engineering & Architecture",
-  ];
 
   const addSkill = () => {
     if (currentSkill.trim() && !jobData.skills.includes(currentSkill.trim())) {
@@ -78,7 +78,7 @@ export default function JobPosting() {
         newErrors.title = "Job title must be at least 10 characters";
       }
 
-      if (!jobData.category) {
+      if (!jobData.category_id) {
         newErrors.category = "Please select a category";
       }
 
@@ -124,21 +124,10 @@ export default function JobPosting() {
 
     setIsSubmitting(true);
     try {
-      // Map category name to ID (you may need to adjust based on your API)
-      const categoryMap: Record<string, number> = {
-        "Development & IT": 1,
-        "Design & Creative": 2,
-        "Sales & Marketing": 3,
-        "Writing & Translation": 4,
-        "Admin & Customer Support": 5,
-        "Finance & Accounting": 6,
-        "Engineering & Architecture": 7,
-      };
-
       const jobPayload = {
         title: jobData.title,
         description: jobData.description,
-        category_id: categoryMap[jobData.category] || 1,
+        category_id: jobData.category_id,
         experience_level: jobData.experience,
         salary:
           jobData.budget.type === "fixed"
@@ -153,7 +142,7 @@ export default function JobPosting() {
       };
 
       const response = await fetch(
-        "http://localhost:5000/api/jobs/employer/jobs",
+        `${API_BASE_URL}/api/jobs/employer/jobs`,
         {
           method: "POST",
           headers: {
@@ -169,8 +158,6 @@ export default function JobPosting() {
         throw new Error(error.message || "Failed to create job");
       }
 
-      const result = await response.json();
-      console.log("Job posted:", result);
       navigate("/employer-dashboard");
     } catch (error: any) {
       console.error("Error posting job:", error);
@@ -291,20 +278,20 @@ export default function JobPosting() {
                     Select a category
                   </label>
                   <select
-                    value={jobData.category}
+                    value={jobData.category_id}
                     onChange={(e) => {
-                      setJobData({ ...jobData, category: e.target.value });
-                      if (errors.category)
-                        setErrors({ ...errors, category: "" });
+                      const selected = categories.find((c) => c.id === parseInt(e.target.value));
+                      setJobData({ ...jobData, category_id: parseInt(e.target.value), category: selected?.name || "" });
+                      if (errors.category) setErrors({ ...errors, category: "" });
                     }}
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0084ca] focus:border-transparent ${
                       errors.category ? "border-red-500" : "border-gray-300"
                     }`}
                   >
-                    <option value="">Choose a category</option>
+                    <option value={0}>Choose a category</option>
                     {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
                       </option>
                     ))}
                   </select>
@@ -835,7 +822,7 @@ export default function JobPosting() {
                 disabled={
                   (step === 1 &&
                     (!jobData.title ||
-                      !jobData.category ||
+                      !jobData.category_id ||
                       !jobData.description)) ||
                   (step === 2 && jobData.skills.length === 0) ||
                   (step === 3 && !jobData.duration)

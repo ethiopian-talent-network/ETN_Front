@@ -18,7 +18,7 @@ interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (token: string, user: User) => void;
+  login: (token: string, user: User) => Promise<void>;
   logout: () => void;
   hasRole: (role: string) => boolean;
 }
@@ -43,40 +43,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check localStorage for existing auth state
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-    const storedRole = localStorage.getItem("role");
+    const restoreSession = async () => {
+      const storedToken = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
 
-    if (storedToken && storedUser) {
-      try {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Error parsing stored user data:", error);
+      if (storedToken && storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          if (!parsed?.id || !parsed?.role || !parsed?.email) {
+            throw new Error("Invalid stored user");
+          }
+          // Verify token is still valid with backend
+          const res = await fetch(
+            `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/auth/me`,
+            { headers: { Authorization: `Bearer ${storedToken}` } },
+          );
+          if (!res.ok) throw new Error("Token expired");
+          setToken(storedToken);
+          setUser(parsed);
+        } catch {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+        }
+      } else {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
-      }
-    } else if (storedToken && storedRole) {
-      // Handle legacy localStorage data (token + role only)
-      try {
-        setToken(storedToken);
-        setUser({
-          id: 0,
-          email: "",
-          name: "",
-          role: storedRole as "talent" | "employer" | "admin",
-        });
-      } catch (error) {
-        console.error("Error parsing legacy auth data:", error);
-        localStorage.removeItem("token");
         localStorage.removeItem("role");
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+    restoreSession();
   }, []);
 
-  const login = (token: string, user: User) => {
+  const login = async (token: string, user: User): Promise<void> => {
     setToken(token);
     setUser(user);
     localStorage.setItem("token", token);

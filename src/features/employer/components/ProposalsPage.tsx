@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
+import { User } from "lucide-react";
 import { useAllProposals } from "../hooks/useAllProposals";
 import { TalentProfileModal } from "./TalentProfileModal";
-import type { Proposal } from "../types/employer.types";
 
 interface ProposalsPageProps {
   darkMode?: boolean;
@@ -117,6 +117,14 @@ export const ProposalsPage: React.FC<ProposalsPageProps> = ({
     activeTab === "shortlisted"
       ? proposals.filter((proposal) => proposal.status === "shortlisted")
       : proposals;
+
+  // Debug logging
+  console.log("ProposalsPage state:", {
+    loading,
+    error,
+    proposals,
+    filteredProposals,
+  });
 
   if (loading && proposals.length === 0) {
     return (
@@ -299,27 +307,19 @@ export const ProposalsPage: React.FC<ProposalsPageProps> = ({
           {filteredProposals.map((proposal) => (
             <div
               key={proposal.id}
-              className={`border rounded-lg p-6 ${
-                darkMode
-                  ? "border-gray-700 bg-gray-800"
-                  : "border-gray-200 bg-white"
-              }`}
+              className={`p-6 rounded-lg border ${darkMode ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"}`}
             >
               <div className="flex justify-between items-start mb-4">
-                <div
-                  className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() => handleViewTalentProfile(proposal.talent_id)}
-                >
-                  {proposal.profile_image && (
-                    <img
-                      src={proposal.profile_image}
-                      alt={proposal.talent_name}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                  )}
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <User className="w-6 h-6 text-blue-600" />
+                  </div>
                   <div>
                     <h3
-                      className={`font-semibold ${darkMode ? "text-white" : "text-gray-900"} hover:underline`}
+                      className={`font-semibold ${darkMode ? "text-white" : "text-gray-900"} hover:underline cursor-pointer`}
+                      onClick={() =>
+                        handleViewTalentProfile(proposal.talent_id)
+                      }
                     >
                       {proposal.talent_name}
                     </h3>
@@ -328,13 +328,6 @@ export const ProposalsPage: React.FC<ProposalsPageProps> = ({
                     >
                       {proposal.talent_email}
                     </p>
-                    {proposal.profile_title && (
-                      <p
-                        className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
-                      >
-                        {proposal.profile_title}
-                      </p>
-                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -413,48 +406,6 @@ export const ProposalsPage: React.FC<ProposalsPageProps> = ({
                     {proposal.company_name}
                   </span>
                 )}
-                {proposal.hourly_rate && (
-                  <span className="flex items-center gap-1">
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                      />
-                    </svg>
-                    {proposal.hourly_rate}/hour
-                  </span>
-                )}
-                {proposal.talent_location && (
-                  <span className="flex items-center gap-1">
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                    {proposal.talent_location}
-                  </span>
-                )}
                 <span className="flex items-center gap-1">
                   <svg
                     className="w-4 h-4"
@@ -502,3 +453,5 @@ export const ProposalsPage: React.FC<ProposalsPageProps> = ({
     </div>
   );
 };
+
+export default ProposalsPage;

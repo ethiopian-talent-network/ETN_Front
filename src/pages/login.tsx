@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useLocation } from "react-router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -13,6 +13,8 @@ export default function Login() {
   const { darkMode, toggleDarkMode } = useDarkMode();
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as any)?.from;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -27,22 +29,23 @@ export default function Login() {
 
       const token = response.data.token;
       const role = response.data.role;
-
-      // Create user object from response
       const user = {
-        id: response.data.user_id || 0,
+        id: response.data.user_id,
         email: email,
         name: response.data.name || email.split("@")[0],
         role: role,
       };
 
-      login(token, user);
+      // Navigate BEFORE setting auth state so PublicOnlyRoute
+      // doesn't redirect while we're still on /login
+      const destination = from
+        ? from
+        : role === "employer"
+          ? "/employer-dashboard"
+          : "/talent-dashboard";
 
-      if (role === "talent") {
-        navigate("/talent-dashboard");
-      } else if (role === "employer") {
-        navigate("/employer-dashboard");
-      }
+      navigate(destination, { replace: true });
+      await login(token, user);
     } catch (error: any) {
       if (axios.isAxiosError(error)) {
         if (error.code === "ERR_NETWORK") {

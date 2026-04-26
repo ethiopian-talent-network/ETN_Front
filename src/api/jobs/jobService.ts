@@ -12,7 +12,7 @@ import {
   type JobFilters,
   type JobResponse,
 } from "./jobApi";
-import type { Job, JobSection } from "../../features/dashboard/types";
+import type { Job, JobSection } from "../../features/talents/types";
 
 export class JobService {
   // Cache for job data

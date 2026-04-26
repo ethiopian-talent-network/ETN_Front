@@ -2,7 +2,6 @@ import { API_BASE_URL } from "../../config/api";
 
 import type {
   Proposal,
-  Job,
   JobFormData,
   Talent,
 } from "../../features/employer/types/employer.types";
@@ -22,21 +21,23 @@ export const fetchAllApplications = async (
   if (options?.limit) params.append("limit", options.limit.toString());
   if (options?.status && options.status !== "all")
     params.append("status", options.status);
-  if (options?.search) params.append("search", options.search);
+  if (options?.search && options.search.trim()) params.append("search", options.search);
 
-  const response = await fetch(
-    `${API_BASE_URL}/api/employer/proposals-and-applications?${params}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+  const url = `${API_BASE_URL}/api/employer/proposals-and-applications?${params}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
     },
-  );
+  });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch applications: ${response.statusText}`);
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to fetch applications: ${response.statusText} - ${errorText}`,
+    );
   }
 
   const data = await response.json();
@@ -44,36 +45,40 @@ export const fetchAllApplications = async (
   // Transform the API response to match the Proposal interface
   // The new endpoint returns data grouped by job, so we need to flatten it
   const allApplications: any[] = [];
-  data.data.forEach((jobGroup: any) => {
-    jobGroup.applications.forEach((app: any) => {
-      allApplications.push({
-        ...app,
-        job_title: jobGroup.job_title,
-        company_name: jobGroup.company_name,
-        company_location: jobGroup.company_location,
-      });
-    });
-  });
 
-  const applications: Proposal[] = allApplications.map((app: any) => ({
-    id: app.application_id,
-    talent_id: app.talent_id,
-    talent_name: app.talent_name,
-    talent_email: app.talent_email,
-    profile_title: "", // Not available in current API response
-    hourly_rate: "", // Not available in current API response
-    talent_location: "", // Not available in current API response
-    profile_image: "", // Not available in current API response
-    cover_letter: app.cover_letter,
-    proposal: app.proposal || "",
-    status: app.application_status,
-    applied_at: app.applied_at,
-    tokens_used: app.tokens_used || 0,
-    job_id: app.job_id,
-    job_title: app.job_title,
-    company_name: app.company_name,
-    company_location: app.company_location,
-  }));
+  if (data.data && Array.isArray(data.data)) {
+    data.data.forEach((jobGroup: any) => {
+      if (jobGroup.applications && Array.isArray(jobGroup.applications)) {
+        jobGroup.applications.forEach((app: any) => {
+          allApplications.push({
+            ...app,
+            job_title: jobGroup.job_title,
+            company_name: jobGroup.company_name,
+            company_location: jobGroup.company_location,
+          });
+        });
+      }
+    });
+  }
+
+  const applications: Proposal[] = allApplications.map((app: any) => {
+    const firstProposal = app.proposals?.[0] ?? {};
+    return {
+      id: app.application_id,
+      talent_id: app.talent_id,
+      talent_name: app.talent_name,
+      talent_email: app.talent_email,
+      cover_letter: firstProposal.cover_letter ?? "",
+      proposal: firstProposal.proposal ?? "",
+      status: app.application_status,
+      applied_at: app.applied_at,
+      tokens_used: firstProposal.tokens_used ?? 0,
+      job_id: app.job_id,
+      job_title: app.job_title,
+      company_name: app.company_name,
+      company_location: app.company_location,
+    };
+  });
 
   return {
     message: data.message,
@@ -123,7 +128,7 @@ export const getAllProposalsAndApplications = async (
   if (options?.limit) params.append("limit", options.limit.toString());
   if (options?.status && options.status !== "all")
     params.append("status", options.status);
-  if (options?.search) params.append("search", options.search);
+  if (options?.search && options.search.trim()) params.append("search", options.search);
   if (options?.job_id) params.append("job_id", options.job_id.toString());
 
   const response = await fetch(
@@ -149,7 +154,7 @@ export const getAllProposalsAndApplications = async (
 // API function for fetching applications for a specific job
 export const getApplicationsByJob = async (token: string, jobId: number) => {
   const response = await fetch(
-    `${API_BASE_URL}/api/jobs/employer/jobs/${jobId}/applications`,
+    `${API_BASE_URL}/api/employer/jobApplicants/${jobId}`,
     {
       method: "GET",
       headers: {

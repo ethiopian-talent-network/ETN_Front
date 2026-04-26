@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { jobService } from "../api/jobs/jobService";
 import { getUserApplications } from "../api/jobs/jobApi";
-import type { Job, JobSection } from "../features/dashboard/types";
+import type { Job, JobSection } from "../features/talents/types";
 import type { JobFilters } from "../api/jobs/jobApi";
 
 export interface UseJobsOptions {

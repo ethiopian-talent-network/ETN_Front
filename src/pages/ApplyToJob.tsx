@@ -17,7 +17,7 @@ import {
   submitApplication,
 } from "../api/jobs/jobApi";
 import { TALENT_ROUTES, PUBLIC_ROUTES } from "../config/routes";
-import type { Job } from "../features/dashboard/types";
+import type { Job } from "../features/talents/types";
 
 interface ApplicationDetails {
   job: Job & {
