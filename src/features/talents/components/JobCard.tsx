@@ -45,10 +45,14 @@ export function JobCard({
             />
           )}
           <div className="min-w-0 flex-1">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
+            <h3 className={`text-base sm:text-lg font-semibold mb-1 ${
+              darkMode ? "text-white" : "text-gray-900"
+            }`}>
               {job.title}
             </h3>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600">
+            <div className={`flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs sm:text-sm ${
+              darkMode ? "text-gray-400" : "text-gray-600"
+            }`}>
               <span>{job.company}</span>
               <span className="hidden sm:inline">•</span>
               <span>{job.posted}</span>
@@ -98,7 +102,9 @@ export function JobCard({
       </p>
 
       {/* Job Details */}
-      <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-4">
+      <div className={`flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm mb-4 ${
+        darkMode ? "text-gray-400" : "text-gray-600"
+      }`}>
         <span className="flex items-center gap-1">
           <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />
           {job.budget}

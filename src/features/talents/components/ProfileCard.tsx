@@ -22,6 +22,15 @@ export function ProfileCard({ darkMode }: ProfileCardProps) {
 
   const loadProfile = useCallback(async (forceRefresh = false) => {
     try {
+      // Show cached data instantly if available
+      const cached = profileService.getCachedProfile();
+      if (cached) {
+        setProfile(cached);
+        setCompletionPercentage(profileService.getProfileCompletionPercentage(cached));
+        setMissingFields(profileService.getMissingFields(cached));
+        setLoading(false);
+      }
+      // Always fetch fresh data in background
       const profileData = await profileService.getProfile(forceRefresh);
       setProfile(profileData);
       setCompletionPercentage(profileService.getProfileCompletionPercentage(profileData));
@@ -34,7 +43,7 @@ export function ProfileCard({ darkMode }: ProfileCardProps) {
   }, []);
 
   useEffect(() => {
-    loadProfile(true);
+    loadProfile(false);
   }, [loadProfile]);
 
   const getInitials = (name: string) => {

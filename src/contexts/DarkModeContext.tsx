@@ -11,9 +11,7 @@ interface DarkModeContextType {
   toggleDarkMode: () => void;
 }
 
-const DarkModeContext = createContext<DarkModeContextType | undefined>(
-  undefined,
-);
+const DarkModeContext = createContext<DarkModeContextType | undefined>(undefined);
 
 export const useDarkMode = () => {
   const context = useContext(DarkModeContext);
@@ -23,52 +21,51 @@ export const useDarkMode = () => {
   return context;
 };
 
-interface DarkModeProviderProps {
-  children: ReactNode;
-}
+// Apply theme to DOM — called both on init and on toggle
+const applyTheme = (dark: boolean) => {
+  const root = document.documentElement;
+  if (dark) {
+    root.classList.add("dark");
+    root.classList.remove("light");
+  } else {
+    root.classList.remove("dark");
+    root.classList.add("light");
+  }
+};
 
-export const DarkModeProvider: React.FC<DarkModeProviderProps> = ({
-  children,
-}) => {
-  const [darkMode, setDarkMode] = useState(() => {
-    // Check localStorage and system preference
-    const savedDarkMode = localStorage.getItem("darkMode");
-    if (savedDarkMode !== null) {
-      return savedDarkMode === "true";
-    }
-    // Check system preference
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+// Read initial preference — runs before first render to avoid flash
+const getInitialDarkMode = (): boolean => {
+  const stored = localStorage.getItem("darkMode");
+  if (stored !== null) return stored === "true";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+};
+
+export const DarkModeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    const initial = getInitialDarkMode();
+    // Apply immediately during init to prevent flash
+    applyTheme(initial);
+    return initial;
   });
 
   useEffect(() => {
-    // Update DOM and localStorage when darkMode changes
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-      document.documentElement.classList.remove("light");
-    } else {
-      document.documentElement.classList.remove("dark");
-      document.documentElement.classList.add("light");
-    }
+    applyTheme(darkMode);
     localStorage.setItem("darkMode", darkMode.toString());
   }, [darkMode]);
 
-  // Listen for system theme changes
+  // Sync with OS preference changes (only if user hasn't set a preference)
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = (e: MediaQueryListEvent) => {
-      // Only update if user hasn't explicitly set a preference
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => {
       if (localStorage.getItem("darkMode") === null) {
         setDarkMode(e.matches);
       }
     };
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
+  const toggleDarkMode = () => setDarkMode((prev) => !prev);
 
   return (
     <DarkModeContext.Provider value={{ darkMode, toggleDarkMode }}>

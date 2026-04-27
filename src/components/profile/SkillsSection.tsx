@@ -132,13 +132,21 @@ const SKILL_CATEGORIES = {
   ],
 };
 
+interface SkillsSectionProps {
+  skills: string[];
+  isEditing: boolean;
+  onAddSpecificSkill: (skill: string) => void;
+  onRemoveSkill: (skill: string) => void;
+  darkMode?: boolean;
+}
+
 export function SkillsSection({
   skills,
   isEditing,
   onAddSpecificSkill,
   onRemoveSkill,
   darkMode = false,
-}) {
+}: SkillsSectionProps) {
   const [search, setSearch] = useState("");
 
   // Flatten all skills

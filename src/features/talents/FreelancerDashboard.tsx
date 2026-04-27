@@ -6,28 +6,24 @@ import { TokenCard } from "./components/TokenCard";
 import { JobFilters } from "./components/JobFilters";
 import { JobList } from "./components/JobList";
 import { JobModal } from "./components/JobModal";
-import { getTalentProfile } from "../../api/talent/talentApi";
+import { profileService } from "../../api/profile/profileService";
 import type { Job, JobSection, JobFilter } from "./types";
 
 export default function FreelancerDashboard() {
   const { darkMode, toggleDarkMode } = useDarkMode();
-  const [userImage, setUserImage] = useState<string | undefined>();
+  const [userImage, setUserImage] = useState<string | undefined>(
+    profileService.getCachedProfile()?.profile_image ||
+    profileService.getCachedProfile()?.image
+  );
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [showJobDetails, setShowJobDetails] = useState(false);
 
-  // Fetch profile image on mount
+  // Sync profile image from cache when profile loads
   useEffect(() => {
-    const loadProfileImage = async () => {
-      try {
-        const profile = await getTalentProfile();
-        if (profile.data.profile_image) {
-          setUserImage(profile.data.profile_image);
-        }
-      } catch (error) {
-        console.error("Failed to load profile image:", error);
-      }
-    };
-    loadProfileImage();
+    const cached = profileService.getCachedProfile();
+    if (cached?.profile_image || cached?.image) {
+      setUserImage(cached.profile_image || cached.image);
+    }
   }, []);
 
   const [searchQuery, setSearchQuery] = useState("");

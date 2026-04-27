@@ -37,7 +37,9 @@ export function JobFilters({
               className={`text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap px-2 py-1 rounded-lg ${
                 activeSection === "best-matches"
                   ? "bg-[#0084ca] text-white"
-                  : "text-gray-600 hover:text-[#0084ca] hover:bg-gray-100 dark:hover:bg-gray-700"
+                  : darkMode
+                  ? "text-gray-300 hover:text-[#0084ca] hover:bg-gray-700"
+                  : "text-gray-600 hover:text-[#0084ca] hover:bg-gray-100"
               }`}
             >
               Best Matches
@@ -47,7 +49,9 @@ export function JobFilters({
               className={`text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap px-2 py-1 rounded-lg ${
                 activeSection === "most-recently"
                   ? "bg-[#0084ca] text-white"
-                  : "text-gray-600 hover:text-[#0084ca] hover:bg-gray-100 dark:hover:bg-gray-700"
+                  : darkMode
+                  ? "text-gray-300 hover:text-[#0084ca] hover:bg-gray-700"
+                  : "text-gray-600 hover:text-[#0084ca] hover:bg-gray-100"
               }`}
             >
               Most Recent
@@ -57,7 +61,9 @@ export function JobFilters({
               className={`text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap px-2 py-1 rounded-lg ${
                 activeSection === "saved-jobs"
                   ? "bg-[#0084ca] text-white"
-                  : "text-gray-600 hover:text-[#0084ca] hover:bg-gray-100 dark:hover:bg-gray-700"
+                  : darkMode
+                  ? "text-gray-300 hover:text-[#0084ca] hover:bg-gray-700"
+                  : "text-gray-600 hover:text-[#0084ca] hover:bg-gray-100"
               }`}
             >
               Saved Jobs
@@ -90,7 +96,7 @@ export function JobFilters({
           {/* Filter Pills */}
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs sm:text-sm text-gray-600">Type:</span>
+              <span className={`text-xs sm:text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>Type:</span>
               <div className="flex flex-wrap gap-1">
                 {["all", "remote", "onsite", "urgent"].map((filter) => (
                   <button
@@ -111,16 +117,16 @@ export function JobFilters({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs sm:text-sm text-gray-600">
+              <span className={`text-xs sm:text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
                 Category:
               </span>
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className={`text-xs px-2 py-1 rounded-full ${
+                className={`text-xs px-2 py-1 rounded-full border ${
                   darkMode
-                    ? "bg-gray-700 text-gray-300"
-                    : "bg-gray-100 text-gray-600"
+                    ? "bg-gray-700 text-gray-300 border-gray-600"
+                    : "bg-gray-100 text-gray-600 border-gray-200"
                 }`}
               >
                 <option value="all">All Categories</option>
@@ -135,13 +141,13 @@ export function JobFilters({
 
         {/* Section Headers */}
         <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className={`text-lg font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>
             {activeSection === "best-matches" && "Best Matches for You"}
             {activeSection === "most-recently" && "Most Recently Posted"}
             {activeSection === "saved-jobs" && "Saved Jobs"}
             {activeSection === "applications" && "Your Applications"}
           </h3>
-          <p className="text-sm text-gray-600">
+          <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
             {activeSection === "best-matches" &&
               "Jobs that match your skills and experience"}
             {activeSection === "most-recently" &&

@@ -35,8 +35,12 @@ export function JobModal({
       >
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold mb-2">{job.title}</h2>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-gray-600 text-sm">
+            <h2 className={`text-xl sm:text-2xl font-bold mb-2 ${
+              darkMode ? "text-white" : "text-gray-900"
+            }`}>{job.title}</h2>
+            <div className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-sm ${
+              darkMode ? "text-gray-400" : "text-gray-600"
+            }`}>
               <span>{job.company}</span>
               <span className="hidden sm:inline">•</span>
               <span>{job.posted}</span>
@@ -54,7 +58,7 @@ export function JobModal({
 
         <div className="space-y-6">
           <div>
-            <h3 className="font-semibold mb-2">Job Description</h3>
+            <h3 className={`font-semibold mb-2 ${darkMode ? "text-white" : "text-gray-900"}`}>Job Description</h3>
             <p className={darkMode ? "text-gray-300" : "text-gray-700"}>
               {job.description}
             </p>
@@ -62,8 +66,8 @@ export function JobModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <h3 className="font-semibold mb-2">Job Details</h3>
-              <div className="space-y-2 text-sm">
+              <h3 className={`font-semibold mb-2 ${darkMode ? "text-white" : "text-gray-900"}`}>Job Details</h3>
+              <div className={`space-y-2 text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
                 <div className="flex items-center gap-2">
                   <DollarSign className="w-4 h-4" />
                   <span>Budget: {job.budget}</span>
@@ -88,7 +92,7 @@ export function JobModal({
             </div>
 
             <div>
-              <h3 className="font-semibold mb-2">Required Skills</h3>
+              <h3 className={`font-semibold mb-2 ${darkMode ? "text-white" : "text-gray-900"}`}>Required Skills</h3>
               <div className="flex flex-wrap gap-2">
                 {job.skills.map((skill, index) => (
                   <span

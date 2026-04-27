@@ -1,4 +1,5 @@
-import { Edit, Save, X } from "lucide-react";
+import { Edit3, Save, X, Loader } from "lucide-react";
+import { useDarkMode } from "../../contexts/DarkModeContext";
 
 type Props = {
   isEditing: boolean;
@@ -8,78 +9,46 @@ type Props = {
   onCancel: () => void;
 };
 
-export function ProfileActions({
-  isEditing,
-  uploading = false,
-  onEdit,
-  onSave,
-  onCancel,
-}: Props) {
+export function ProfileActions({ isEditing, uploading = false, onEdit, onSave, onCancel }: Props) {
+  const { darkMode } = useDarkMode();
+  const dm = darkMode;
+
+  if (!isEditing) {
+    return (
+      <button
+        onClick={onEdit}
+        className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${
+          dm
+            ? "border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+            : "border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+        }`}
+      >
+        <Edit3 className="w-4 h-4" />
+        Edit Profile
+      </button>
+    );
+  }
+
   return (
     <div className="flex items-center gap-2">
-      {/* VIEW MODE */}
-      {!isEditing && (
-        <button
-          onClick={onEdit}
-          className="
-            px-4 py-2 text-sm font-medium
-            border border-gray-200 dark:border-gray-700
-            rounded-full
-            hover:bg-gray-100 dark:hover:bg-gray-800
-            transition flex items-center gap-2
-          "
-        >
-          <Edit className="w-4 h-4" />
-          Edit Profile
-        </button>
-      )}
-
-      {/* EDIT MODE */}
-      {isEditing && (
-        <div
-          className="
-            flex items-center gap-1
-            bg-gray-50 dark:bg-gray-800
-            border border-gray-200 dark:border-gray-700
-            rounded-full p-1 shadow-sm
-          "
-        >
-          {/* CANCEL */}
-          <button
-            onClick={onCancel}
-            className="
-              px-3 py-1.5 text-sm
-              text-gray-600 dark:text-gray-300
-              hover:text-black dark:hover:text-white
-              transition
-            "
-          >
-            <X className="w-4 h-4 inline mr-1" />
-            Cancel
-          </button>
-
-          {/* DIVIDER */}
-          <div className="w-px h-5 bg-gray-300 dark:bg-gray-600" />
-
-          {/* SAVE (PRIMARY) */}
-          <button
-            onClick={onSave}
-            disabled={uploading}
-            className="
-              px-4 py-1.5 text-sm font-medium
-              bg-black text-white
-              rounded-full
-              hover:bg-gray-800
-              disabled:opacity-50
-              transition
-              flex items-center gap-2
-            "
-          >
-            <Save className="w-4 h-4" />
-            Save
-          </button>
-        </div>
-      )}
+      <button
+        onClick={onCancel}
+        className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${
+          dm
+            ? "border-gray-600 text-gray-300 hover:bg-gray-700"
+            : "border-gray-300 text-gray-600 hover:bg-gray-50"
+        }`}
+      >
+        <X className="w-4 h-4" /> Cancel
+      </button>
+      <button
+        onClick={onSave}
+        disabled={uploading}
+        className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-[#0084ca] hover:bg-[#006ba6] text-white rounded-lg transition-colors disabled:opacity-50"
+      >
+        {uploading ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+        Save
+      </button>
     </div>
   );
 }

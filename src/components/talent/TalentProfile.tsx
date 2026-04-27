@@ -14,6 +14,7 @@ import {
 import { ProfileHeader } from "../profile/ProfileHeader";
 import type { ProfileData } from "../../types/profile";
 import { useNavigate } from "react-router";
+import { LanguageSelector } from "../profile/LanguageSelector";
 
 interface TalentProfileProps {
   darkMode?: boolean;
@@ -237,11 +238,17 @@ export const TalentProfile: React.FC<TalentProfileProps> = ({ darkMode = false }
             { label: "About Yourself", field: "about" as const, icon: <Briefcase className="w-4 h-4" />, rows: 4, placeholder: "Tell us about your expertise and what you're looking for..." },
             { label: "Education", field: "education" as const, icon: <GraduationCap className="w-4 h-4" />, rows: 2, placeholder: "Your educational background..." },
             { label: "Experience", field: "experience" as const, icon: <Briefcase className="w-4 h-4" />, rows: 3, placeholder: "Describe your work experience..." },
-            { label: "Languages", field: "languages" as const, icon: <Globe className="w-4 h-4" />, rows: 1, placeholder: "e.g. English, Amharic, French" },
-          ].map(({ label, field, icon, rows, placeholder }) => (
+            { label: "Languages", field: "languages" as const, icon: <Globe className="w-4 h-4" />, rows: 1, placeholder: "e.g. English, Amharic, French", isLanguage: true },
+          ].map(({ label, field, icon, rows, placeholder, isLanguage }: any) => (
             <div key={field}>
               <label className={labelCls}>{icon}{label}</label>
-              {rows === 1 ? (
+              {isLanguage ? (
+                <LanguageSelector
+                  value={formData[field] || ""}
+                  onChange={(val) => setFormData((p) => ({ ...p, [field]: val }))}
+                  darkMode={dm}
+                />
+              ) : rows === 1 ? (
                 <input type="text" value={formData[field] || ""} onChange={(e) => setFormData((p) => ({ ...p, [field]: e.target.value }))}
                   className={inputCls} placeholder={placeholder} />
               ) : (
@@ -429,8 +436,11 @@ export const TalentProfile: React.FC<TalentProfileProps> = ({ darkMode = false }
               <h3 className={`text-sm font-bold uppercase tracking-wider ${dm ? "text-gray-300" : "text-gray-700"}`}>Languages</h3>
             </div>
             {editing ? (
-              <input type="text" value={formData.languages || ""} onChange={(e) => setFormData((p) => ({ ...p, languages: e.target.value }))}
-                className={inputCls} placeholder="e.g. English, Amharic" />
+              <LanguageSelector
+                value={formData.languages || ""}
+                onChange={(val) => setFormData((p) => ({ ...p, languages: val }))}
+                darkMode={dm}
+              />
             ) : (
               <div className="flex flex-wrap gap-2">
                 {profile.languages ? (

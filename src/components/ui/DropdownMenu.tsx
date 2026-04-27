@@ -10,6 +10,7 @@ import {
   HelpCircle,
   Shield,
 } from "lucide-react";
+import { useDarkMode } from "../../contexts/DarkModeContext";
 
 interface DropdownMenuProps {
   userName: string;
@@ -28,20 +29,17 @@ export default function DropdownMenu({
   onImageUpload,
   onLogout,
 }: DropdownMenuProps) {
+  const { darkMode } = useDarkMode();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -49,17 +47,15 @@ export default function DropdownMenu({
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && onImageUpload) {
-      // Validate file type and size
-      if (file.type.startsWith("image/")) {
-        if (file.size <= 5 * 1024 * 1024) {
-          // 5MB limit
-          onImageUpload(file);
-        } else {
-          alert("Image size should be less than 5MB");
-        }
-      } else {
+      if (!file.type.startsWith("image/")) {
         alert("Please select a valid image file");
+        return;
       }
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Image size should be less than 5MB");
+        return;
+      }
+      onImageUpload(file);
     }
     setIsOpen(false);
   };
@@ -103,12 +99,16 @@ export default function DropdownMenu({
     },
   ];
 
+  const dm = darkMode;
+
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Profile Avatar Button */}
+      {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+        className={`flex items-center gap-2 p-1 rounded-full transition-colors ${
+          dm ? "hover:bg-gray-700" : "hover:bg-gray-100"
+        }`}
         aria-label="Profile menu"
         aria-expanded={isOpen}
       >
@@ -117,56 +117,71 @@ export default function DropdownMenu({
             <img
               src={userImage}
               alt={userName}
-              className="w-8 h-8 rounded-full object-cover"
+              className="w-8 h-8 rounded-full object-cover ring-2 ring-[#0084ca]/30"
             />
           ) : (
-            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-              <User className="w-5 h-5 text-gray-600" />
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+              dm ? "bg-gray-700" : "bg-gray-200"
+            }`}>
+              <User className={`w-5 h-5 ${dm ? "text-gray-300" : "text-gray-600"}`} />
             </div>
           )}
-          <div className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border-2 border-white"></div>
+          <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 ${
+            dm ? "border-gray-800" : "border-white"
+          }`} />
         </div>
       </button>
 
-      {/* Dropdown Menu */}
+      {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-          {/* User Profile Section */}
-          <div className="p-3 border-b border-gray-200">
+        <div className={`absolute right-0 mt-2 w-64 rounded-xl shadow-2xl border z-50 overflow-hidden ${
+          dm
+            ? "bg-gray-800 border-gray-700 shadow-black/40"
+            : "bg-white border-gray-200 shadow-gray-200/80"
+        }`}>
+
+          {/* User Info Header */}
+          <div className={`p-4 border-b ${dm ? "border-gray-700" : "border-gray-100"}`}>
             <div className="flex items-center gap-3">
-              <div className="relative">
+              <div className="relative flex-shrink-0">
                 {userImage ? (
                   <img
                     src={userImage}
                     alt={userName}
-                    className="w-10 h-10 rounded-full object-cover"
+                    className="w-11 h-11 rounded-full object-cover ring-2 ring-[#0084ca]/30"
                   />
                 ) : (
-                  <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-gray-600" />
+                  <div className={`w-11 h-11 rounded-full flex items-center justify-center ${
+                    dm ? "bg-gray-700" : "bg-gray-100"
+                  }`}>
+                    <User className={`w-5 h-5 ${dm ? "text-gray-300" : "text-gray-500"}`} />
                   </div>
                 )}
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-0 right-0 w-5 h-5 bg-[#0084ca] rounded-full flex items-center justify-center hover:bg-[#006ba6] transition-colors"
+                  className="absolute bottom-0 right-0 w-5 h-5 bg-[#0084ca] rounded-full flex items-center justify-center hover:bg-[#006ba6] transition-colors shadow"
                   title="Change profile picture"
                 >
                   <Camera className="w-2.5 h-2.5 text-white" />
                 </button>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-upwork-body-medium text-gray-900 truncate">
+                <p className={`text-sm font-semibold truncate ${dm ? "text-white" : "text-gray-900"}`}>
                   {userName}
                 </p>
-                <p className="text-upwork-small text-gray-500 truncate">
+                <p className={`text-xs truncate mt-0.5 ${dm ? "text-gray-400" : "text-gray-500"}`}>
                   {userEmail}
                 </p>
+                <span className="inline-flex items-center gap-1 mt-1 text-xs text-green-500 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                  Online
+                </span>
               </div>
             </div>
           </div>
 
           {/* Menu Items */}
-          <div className="py-1">
+          <div className="py-1.5">
             {menuItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -174,14 +189,23 @@ export default function DropdownMenu({
                   key={item.label}
                   to={item.href}
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition-colors group"
+                  className={`flex items-center gap-3 px-3 py-2.5 transition-colors group ${
+                    dm
+                      ? "hover:bg-gray-700 text-gray-300 hover:text-white"
+                      : "hover:bg-gray-50 text-gray-700 hover:text-gray-900"
+                  }`}
                 >
-                  <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-gray-200 transition-colors">
-                    <Icon className="w-4 h-4 text-gray-600" />
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors flex-shrink-0 ${
+                    dm
+                      ? "bg-gray-700 group-hover:bg-gray-600"
+                      : "bg-gray-100 group-hover:bg-gray-200"
+                  }`}>
+                    <Icon className={`w-4 h-4 ${dm ? "text-gray-400 group-hover:text-gray-200" : "text-gray-500 group-hover:text-gray-700"}`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-upwork-body text-gray-900">
-                      {item.label}
+                    <p className="text-sm font-medium">{item.label}</p>
+                    <p className={`text-xs truncate ${dm ? "text-gray-500" : "text-gray-400"}`}>
+                      {item.description}
                     </p>
                   </div>
                 </Link>
@@ -189,29 +213,30 @@ export default function DropdownMenu({
             })}
           </div>
 
-          {/* Logout Section */}
-          <div className="border-t border-gray-200 p-1">
+          {/* Logout */}
+          <div className={`border-t p-1.5 ${dm ? "border-gray-700" : "border-gray-100"}`}>
             <button
               onClick={() => {
-                if (onLogout) {
-                  onLogout();
-                }
+                onLogout?.();
                 setIsOpen(false);
               }}
-              className="flex items-center gap-3 w-full px-3 py-2 hover:bg-red-50 transition-colors group rounded-md"
+              className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-colors group ${
+                dm ? "hover:bg-red-900/30" : "hover:bg-red-50"
+              }`}
             >
-              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center group-hover:bg-red-200 transition-colors">
-                <LogOut className="w-4 h-4 text-red-600" />
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors flex-shrink-0 ${
+                dm
+                  ? "bg-red-900/40 group-hover:bg-red-900/60"
+                  : "bg-red-100 group-hover:bg-red-200"
+              }`}>
+                <LogOut className="w-4 h-4 text-red-500" />
               </div>
-              <div className="flex-1 text-left">
-                <p className="text-upwork-body text-red-600">Log Out</p>
-              </div>
+              <p className="text-sm font-medium text-red-500">Log Out</p>
             </button>
           </div>
         </div>
       )}
 
-      {/* Hidden File Input */}
       <input
         ref={fileInputRef}
         type="file"

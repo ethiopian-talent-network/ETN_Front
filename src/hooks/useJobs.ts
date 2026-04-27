@@ -66,23 +66,21 @@ export function useJobs(options: UseJobsOptions = {}): UseJobsReturn {
       setError(null);
 
       try {
-        const fetchedJobs = await jobService.getJobsBySection(targetSection);
+        // Fetch jobs and applications in parallel
+        const [fetchedJobs, applications] = await Promise.all([
+          jobService.getJobsBySection(targetSection),
+          fetchApplications(),
+        ]);
 
-        // Fetch applications and mark jobs as applied
-        const applications = await fetchApplications();
         const appliedJobIds = applications.map((app) => app.job_id);
 
-        // Update job status based on applications
-        const updatedJobs = fetchedJobs.map((job) => {
-          const isApplied = appliedJobIds.includes(job.id);
-          return {
-            ...job,
-            status: isApplied ? "applied" : job.status,
-          };
-        });
+        const updatedJobs = fetchedJobs.map((job) => ({
+          ...job,
+          status: appliedJobIds.includes(job.id) ? "applied" : job.status,
+        }));
 
         setJobs(updatedJobs);
-        setPagination(null); // Section-based jobs don't have pagination
+        setPagination(null);
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to fetch jobs";

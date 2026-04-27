@@ -9,6 +9,27 @@ import {
 
 const MAX_PROJECTS = 20;
 
+interface PortfolioItem {
+  id?: number | string;
+  title: string;
+  description: string;
+  url: string;
+  image?: string;
+  role?: string;
+  techStack?: string;
+}
+
+interface PortfolioSectionProps {
+  portfolio: PortfolioItem[];
+  isEditing: boolean;
+  showAddPortfolio: boolean;
+  newPortfolioItem: PortfolioItem;
+  onShowAddPortfolioChange: (show: boolean) => void;
+  onNewPortfolioItemChange: (item: PortfolioItem) => void;
+  onAddPortfolioItem: () => void;
+  onRemovePortfolioItem: (id: number | string) => void;
+}
+
 export function PortfolioSection({
   portfolio,
   isEditing,
@@ -18,14 +39,14 @@ export function PortfolioSection({
   onNewPortfolioItemChange,
   onAddPortfolioItem,
   onRemovePortfolioItem,
-}) {
+}: PortfolioSectionProps) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleChange = (field, value) => {
+  const handleChange = (field: keyof PortfolioItem, value: string) => {
     onNewPortfolioItemChange({
       ...newPortfolioItem,
       [field]: value,
@@ -39,7 +60,7 @@ export function PortfolioSection({
     // Validate and create preview
     const validation = ImageUploadService.validateImage(file);
     if (!validation.valid) {
-      setUploadError(validation.error);
+      setUploadError(validation.error ?? null);
       return;
     }
 
@@ -314,7 +335,7 @@ export function PortfolioSection({
 
                 {isEditing && (
                   <button
-                    onClick={() => onRemovePortfolioItem(project.id)}
+                    onClick={() => project.id !== undefined && onRemovePortfolioItem(project.id)}
                     className="bg-red-500 text-white p-2 rounded-lg"
                   >
                     <Trash2 className="w-4 h-4" />

@@ -4,6 +4,7 @@ import Signup from "./pages/signup";
 import Landing from "./pages/landing";
 import OtpVerification from "./pages/otp-verification";
 import EmployerDashboard from "./pages/employer/EmployerDashboard";
+import EmployerProfilePage from "./pages/employer/EmployerProfile";
 import FreelancerDashboard from "./features/talents/FreelancerDashboard";
 import TalentsDashboard from "./features/talents/TalentsDashboard";
 import TalentNetwork from "./features/talents/TalentNetwork";
@@ -161,6 +162,14 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["employer"]}>
                     <EmployerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path={EMPLOYER_ROUTES.PROFILE.path}
+                element={
+                  <ProtectedRoute allowedRoles={["employer"]}>
+                    <EmployerProfilePage />
                   </ProtectedRoute>
                 }
               />

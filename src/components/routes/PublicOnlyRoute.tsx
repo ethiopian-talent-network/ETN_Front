@@ -19,10 +19,10 @@ export const PublicOnlyRoute = ({ children }: PublicOnlyRouteProps) => {
     );
   }
 
+  // Only redirect away from login/signup/otp pages, NOT from landing page
   if (isAuthenticated && user) {
-    if (from) return <Navigate to={from} replace />;
-    if (user.role === "employer") return <Navigate to="/employer-dashboard" replace />;
-    return <Navigate to="/talent-dashboard" replace />;
+    const destination = from || (user.role === "employer" ? "/employer-dashboard" : "/talent-dashboard");
+    return <Navigate to={destination} replace />;
   }
 
   return <>{children}</>;

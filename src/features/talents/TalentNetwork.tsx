@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { useDarkMode } from "../../contexts/DarkModeContext";
-import { MapPin, GitBranch, Link as LinkIcon, MessageSquare, Users, Search, Compass } from "lucide-react";
+import {
+  MapPin, GitBranch, Link as LinkIcon, MessageSquare,
+  Users, Search, Compass, X, Mail,
+} from "lucide-react";
 import { getMyConnections, type Connection } from "../../api/talent/talentApi";
 import { SHARED_ROUTES, TALENT_ROUTES } from "../../config/routes";
 
@@ -11,10 +14,9 @@ export default function TalentNetwork() {
   const [filtered, setFiltered] = useState<Connection[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Connection | null>(null);
 
-  useEffect(() => {
-    loadConnections();
-  }, []);
+  useEffect(() => { loadConnections(); }, []);
 
   useEffect(() => {
     const q = search.toLowerCase();
@@ -49,6 +51,18 @@ export default function TalentNetwork() {
   const inputCls = darkMode
     ? "bg-gray-800 border-gray-600 text-white placeholder-gray-500 focus:border-[#0084ca]"
     : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-[#0084ca]";
+
+  const Avatar = ({ conn, size = "md", clickable = false }: { conn: Connection; size?: "sm" | "md" | "lg"; clickable?: boolean }) => {
+    const sizes = { sm: "w-10 h-10 text-base", md: "w-14 h-14 text-xl", lg: "w-20 h-20 text-2xl" };
+    const cls = `${sizes[size]} rounded-full object-cover flex-shrink-0 ring-2 ring-[#0084ca]/20 ${clickable ? "cursor-pointer hover:ring-[#0084ca]/60 transition-all" : ""}`;
+    return conn.profile_image ? (
+      <img src={conn.profile_image} alt={conn.name} className={cls} />
+    ) : (
+      <div className={`${sizes[size]} rounded-full bg-gradient-to-br from-[#0084ca] to-purple-600 flex items-center justify-center text-white font-bold flex-shrink-0 ring-2 ring-[#0084ca]/20 ${clickable ? "cursor-pointer hover:ring-[#0084ca]/60 transition-all" : ""}`}>
+        {conn.name.charAt(0).toUpperCase()}
+      </div>
+    );
+  };
 
   return (
     <div className={`min-h-screen ${bg} transition-colors duration-300`}>
@@ -133,21 +147,18 @@ export default function TalentNetwork() {
                   key={conn.id}
                   className={`${card} border rounded-xl p-5 flex flex-col gap-4 hover:shadow-md transition-all duration-200`}
                 >
-                  {/* Avatar + Name */}
+                  {/* Avatar (clickable) + Name */}
                   <div className="flex items-center gap-3">
-                    {conn.profile_image ? (
-                      <img
-                        src={conn.profile_image}
-                        alt={conn.name}
-                        className="w-14 h-14 rounded-full object-cover flex-shrink-0 ring-2 ring-[#0084ca]/20"
-                      />
-                    ) : (
-                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#0084ca] to-purple-600 flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
-                        {conn.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <div onClick={() => setSelected(conn)} title="View profile">
+                      <Avatar conn={conn} size="md" clickable />
+                    </div>
                     <div className="min-w-0">
-                      <h3 className={`font-semibold truncate ${text}`}>{conn.name}</h3>
+                      <h3
+                        className={`font-semibold truncate cursor-pointer hover:text-[#0084ca] transition-colors ${text}`}
+                        onClick={() => setSelected(conn)}
+                      >
+                        {conn.name}
+                      </h3>
                       <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
                         Connected
@@ -174,7 +185,7 @@ export default function TalentNetwork() {
                     </div>
                   )}
 
-                  {/* Links row */}
+                  {/* Links */}
                   {(conn.linkedin || conn.github) && (
                     <div className="flex gap-3">
                       {conn.linkedin && (
@@ -205,6 +216,121 @@ export default function TalentNetwork() {
           </div>
         )}
       </div>
+
+      {/* ── Profile Detail Drawer ── */}
+      {selected && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setSelected(null)}
+          />
+
+          {/* Drawer */}
+          <div className={`relative w-full max-w-sm h-full overflow-y-auto shadow-2xl animate-slide-in-right ${darkMode ? "bg-gray-900" : "bg-white"}`}>
+
+            {/* Close */}
+            <button
+              onClick={() => setSelected(null)}
+              className={`absolute top-4 right-4 z-10 p-2 rounded-full transition-colors ${darkMode ? "hover:bg-gray-800 text-gray-400" : "hover:bg-gray-100 text-gray-500"}`}
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Cover */}
+            <div className="h-28 bg-gradient-to-r from-[#0084ca] to-purple-600" />
+
+            <div className="px-6 pb-8">
+              {/* Avatar overlapping cover */}
+              <div className="-mt-10 mb-4 flex items-end justify-between">
+                <div onClick={() => {}} className="flex-shrink-0">
+                  {selected.profile_image ? (
+                    <img
+                      src={selected.profile_image}
+                      alt={selected.name}
+                      className={`w-20 h-20 rounded-full object-cover border-4 shadow-lg ${darkMode ? "border-gray-900" : "border-white"}`}
+                    />
+                  ) : (
+                    <div className={`w-20 h-20 rounded-full bg-gradient-to-br from-[#0084ca] to-purple-600 flex items-center justify-center text-white font-bold text-2xl border-4 shadow-lg ${darkMode ? "border-gray-900" : "border-white"}`}>
+                      {selected.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+
+                {/* Message CTA */}
+                <Link
+                  to={SHARED_ROUTES.MESSAGES.path}
+                  onClick={() => setSelected(null)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-[#0084ca] hover:bg-[#006ba6] text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  <MessageSquare className="w-4 h-4" /> Message
+                </Link>
+              </div>
+
+              {/* Name */}
+              <h2 className={`text-xl font-bold ${text}`}>{selected.name}</h2>
+              <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium mt-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                Connected
+              </span>
+
+              {/* About */}
+              {selected.about && (
+                <div className="mt-5">
+                  <h3 className={`text-xs font-semibold uppercase tracking-wider mb-2 ${muted}`}>About</h3>
+                  <p className={`text-sm leading-relaxed ${text}`}>{selected.about}</p>
+                </div>
+              )}
+
+              {/* Skills */}
+              {selected.skills && (
+                <div className="mt-5">
+                  <h3 className={`text-xs font-semibold uppercase tracking-wider mb-3 ${muted}`}>Skills</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selected.skills.split(",").map((s, i) => (
+                      <span key={i} className="px-3 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-medium">
+                        {s.trim()}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Links */}
+              {(selected.linkedin || selected.github) && (
+                <div className="mt-5">
+                  <h3 className={`text-xs font-semibold uppercase tracking-wider mb-3 ${muted}`}>Links</h3>
+                  <div className="flex flex-col gap-2">
+                    {selected.linkedin && (
+                      <a href={selected.linkedin} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-[#0084ca] hover:underline">
+                        <LinkIcon className="w-4 h-4" /> LinkedIn Profile
+                      </a>
+                    )}
+                    {selected.github && (
+                      <a href={selected.github} target="_blank" rel="noopener noreferrer"
+                        className={`flex items-center gap-2 text-sm hover:underline ${text}`}>
+                        <GitBranch className="w-4 h-4" /> GitHub Profile
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Divider + full message CTA */}
+              <div className={`mt-8 pt-6 border-t ${darkMode ? "border-gray-700" : "border-gray-100"}`}>
+                <Link
+                  to={SHARED_ROUTES.MESSAGES.path}
+                  onClick={() => setSelected(null)}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-medium bg-[#0084ca]/10 hover:bg-[#0084ca]/20 text-[#0084ca] transition-colors"
+                >
+                  <MessageSquare className="w-4 h-4" /> Send a Message
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

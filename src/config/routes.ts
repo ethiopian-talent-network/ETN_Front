@@ -137,6 +137,12 @@ export const EMPLOYER_ROUTES: Record<string, RouteConfig> = {
     roles: [RouteRole.EMPLOYER],
     description: "Main dashboard for employer users",
   },
+  PROFILE: {
+    path: "/employer-profile",
+    title: "Company Profile",
+    roles: [RouteRole.EMPLOYER],
+    description: "Employer company profile",
+  },
   POST_JOB: {
     path: "/post-job",
     title: "Post Job",

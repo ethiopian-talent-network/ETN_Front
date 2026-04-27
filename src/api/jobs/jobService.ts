@@ -19,12 +19,19 @@ export class JobService {
   private jobsCache: Map<string, Job[]> = new Map();
   private jobDetailCache: Map<number, Job> = new Map();
   private cacheExpiry: Map<string, number> = new Map();
-  private CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  private CACHE_DURATION = 2 * 60 * 1000; // 2 minutes fresh
+  private STALE_DURATION = 10 * 60 * 1000; // 10 minutes stale-while-revalidate
+  private inflightRequests: Map<string, Promise<Job[]>> = new Map();
 
-  // Check if cache is valid
+  // Check if cache is valid (fresh)
   private isCacheValid(key: string): boolean {
     const expiry = this.cacheExpiry.get(key);
     return expiry ? Date.now() < expiry : false;
+  }
+
+  // Check if stale cache exists (usable while revalidating)
+  private hasStaleCache(key: string): boolean {
+    return this.jobsCache.has(key);
   }
 
   // Set cache with expiry
@@ -33,28 +40,43 @@ export class JobService {
     this.cacheExpiry.set(key, Date.now() + this.CACHE_DURATION);
   }
 
-  // Get jobs by section with caching
+  // Get jobs by section with caching + stale-while-revalidate + request deduplication
   async getJobsBySection(section: JobSection): Promise<Job[]> {
     const cacheKey = `${section}`;
 
+    // Return fresh cache immediately
     if (this.isCacheValid(cacheKey)) {
       return this.jobsCache.get(cacheKey) || [];
     }
 
-    try {
-      const jobs = await getJobsBySection(section);
-      this.setCache(cacheKey, jobs);
-      return jobs;
-    } catch (error) {
-      console.error(`Error fetching ${section} jobs:`, error);
-      // Return cached data if available, even if expired
-      const cachedJobs = this.jobsCache.get(cacheKey);
-      if (cachedJobs) {
-        console.warn("Using expired cache for", section);
-        return cachedJobs;
-      }
-      throw error;
+    // Deduplicate inflight requests for the same key
+    if (this.inflightRequests.has(cacheKey)) {
+      return this.inflightRequests.get(cacheKey)!;
     }
+
+    const fetchPromise = getJobsBySection(section)
+      .then((jobs) => {
+        this.setCache(cacheKey, jobs);
+        this.inflightRequests.delete(cacheKey);
+        return jobs;
+      })
+      .catch((error) => {
+        this.inflightRequests.delete(cacheKey);
+        // Return stale cache on error rather than throwing
+        const stale = this.jobsCache.get(cacheKey);
+        if (stale) return stale;
+        throw error;
+      });
+
+    this.inflightRequests.set(cacheKey, fetchPromise);
+
+    // Stale-while-revalidate: return stale data immediately, update in background
+    if (this.hasStaleCache(cacheKey)) {
+      fetchPromise.catch(() => {}); // background update, ignore errors
+      return this.jobsCache.get(cacheKey)!;
+    }
+
+    return fetchPromise;
   }
 
   // Get all jobs with filtering
