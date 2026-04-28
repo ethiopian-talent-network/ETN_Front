@@ -23,7 +23,7 @@ export const TabsNavigation: React.FC<TabsNavigationProps> = ({
   counts = {},
 }) => {
   return (
-    <div className={`flex items-center gap-1 p-1 rounded-xl w-fit ${darkMode ? "bg-gray-800" : "bg-gray-100"}`}>
+    <div className={`flex items-center gap-1 p-1 rounded-xl overflow-x-auto scrollbar-hide w-full sm:w-fit ${darkMode ? "bg-gray-800" : "bg-slate-200"}`}>
       {tabs.map(({ id, label, icon: Icon }) => {
         const count = counts[id];
         const isActive = activeTab === id;
@@ -31,22 +31,22 @@ export const TabsNavigation: React.FC<TabsNavigationProps> = ({
           <button
             key={id}
             onClick={() => setActiveTab(id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
               isActive
                 ? "bg-white shadow-sm text-[#0084ca] dark:bg-gray-700 dark:text-[#60b4e8]"
                 : darkMode
                   ? "text-gray-400 hover:text-gray-200"
-                  : "text-gray-500 hover:text-gray-800"
+                  : "text-gray-600 hover:text-gray-900"
             }`}
             style={isActive && !darkMode ? { backgroundColor: "white" } : {}}
           >
             <Icon className="w-4 h-4" />
-            {label}
+            <span className="hidden xs:inline sm:inline">{label}</span>
             {count !== undefined && count > 0 && (
               <span className={`px-1.5 py-0.5 text-xs rounded-full font-semibold ${
                 isActive
                   ? "bg-[#0084ca]/10 text-[#0084ca]"
-                  : darkMode ? "bg-gray-700 text-gray-400" : "bg-gray-200 text-gray-600"
+                  : darkMode ? "bg-gray-700 text-gray-400" : "bg-slate-300 text-gray-600"
               }`}>
                 {count}
               </span>

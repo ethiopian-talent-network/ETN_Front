@@ -58,7 +58,7 @@ export function ProfileCard({ darkMode }: ProfileCardProps) {
   if (loading) {
     return (
       <div className="lg:col-span-1 order-first lg:order-last">
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg p-4 sm:p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm p-4 sm:p-6">
           <div className="animate-pulse">
             <div className="flex items-start gap-3">
               <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
@@ -157,7 +157,7 @@ export function ProfileCard({ darkMode }: ProfileCardProps) {
 
           {/* Progress Bar */}
           <div className="flex items-center justify-between">
-            <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2 mr-3">
+            <div className="flex-1 bg-slate-200 dark:bg-gray-700 rounded-full h-2 mr-3">
               <div
                 className={`h-2 rounded-full transition-all duration-500 ${
                   completionPercentage === 100
@@ -215,7 +215,7 @@ export function ProfileCard({ darkMode }: ProfileCardProps) {
             {/* Missing Fields Details */}
             {showMissingDetails && completionPercentage < 100 && (
               <div
-                className={`mt-3 p-3 rounded-lg ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}
+                className={`mt-3 p-3 rounded-lg ${darkMode ? "bg-gray-700" : "bg-slate-100 border border-slate-200"}`}
               >
                 <p
                   className={`text-xs font-semibold mb-2 ${darkMode ? "text-gray-200" : "text-gray-700"}`}

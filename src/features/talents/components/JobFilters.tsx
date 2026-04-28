@@ -39,7 +39,7 @@ export function JobFilters({
                   ? "bg-[#0084ca] text-white"
                   : darkMode
                   ? "text-gray-300 hover:text-[#0084ca] hover:bg-gray-700"
-                  : "text-gray-600 hover:text-[#0084ca] hover:bg-gray-100"
+                  : "text-gray-600 hover:text-[#0084ca] hover:bg-slate-200"
               }`}
             >
               Best Matches
@@ -51,7 +51,7 @@ export function JobFilters({
                   ? "bg-[#0084ca] text-white"
                   : darkMode
                   ? "text-gray-300 hover:text-[#0084ca] hover:bg-gray-700"
-                  : "text-gray-600 hover:text-[#0084ca] hover:bg-gray-100"
+                  : "text-gray-600 hover:text-[#0084ca] hover:bg-slate-200"
               }`}
             >
               Most Recent
@@ -63,7 +63,7 @@ export function JobFilters({
                   ? "bg-[#0084ca] text-white"
                   : darkMode
                   ? "text-gray-300 hover:text-[#0084ca] hover:bg-gray-700"
-                  : "text-gray-600 hover:text-[#0084ca] hover:bg-gray-100"
+                  : "text-gray-600 hover:text-[#0084ca] hover:bg-slate-200"
               }`}
             >
               Saved Jobs
@@ -107,7 +107,7 @@ export function JobFilters({
                         ? "bg-[#0084ca] text-white"
                         : darkMode
                           ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          : "bg-slate-200 text-gray-700 hover:bg-slate-300"
                     }`}
                   >
                     {filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -126,7 +126,7 @@ export function JobFilters({
                 className={`text-xs px-2 py-1 rounded-full border ${
                   darkMode
                     ? "bg-gray-700 text-gray-300 border-gray-600"
-                    : "bg-gray-100 text-gray-600 border-gray-200"
+                    : "bg-white text-gray-700 border-slate-300"
                 }`}
               >
                 <option value="all">All Categories</option>

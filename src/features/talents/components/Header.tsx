@@ -146,7 +146,8 @@ export function Header({
             </button>
 
             <div className="hidden md:flex items-center gap-6 lg:gap-8">
-              <button
+              <Link
+                to={TALENT_ROUTES.DASHBOARD.path}
                 className={`text-sm font-medium transition-all duration-200 hover:scale-105 ${
                   darkMode
                     ? "text-gray-300 hover:text-[#0084ca]"
@@ -154,7 +155,7 @@ export function Header({
                 }`}
               >
                 Find Jobs
-              </button>
+              </Link>
               <Link
                 to={TALENT_ROUTES.APPLICATIONS.path}
                 className={`text-sm font-medium transition-all duration-200 hover:scale-105 ${
@@ -327,7 +328,16 @@ export function Header({
                       notifications.map((notif) => (
                         <div
                           key={notif.id}
+                          onClick={() => {
+                            if (notif.type === "new_message") {
+                              markNotificationRead(notif.id).catch(() => {});
+                              setNotifOpen(false);
+                              navigate("/messages");
+                            }
+                          }}
                           className={`px-4 py-3 border-b last:border-0 ${
+                            notif.type === "new_message" ? "cursor-pointer" : ""
+                          } ${
                             darkMode ? "border-gray-700" : "border-gray-50"
                           } ${
                             !notif.is_read
@@ -377,6 +387,10 @@ export function Header({
                               {notif.type === "connection_accepted" && (
                                 <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">✓ Now connected</p>
                               )}
+
+                              {notif.type === "new_message" && (
+                                <p className="text-xs text-purple-600 dark:text-purple-400 mt-1 font-medium">→ Tap to open messages</p>
+                              )}
                             </div>
                             {!notif.is_read && (
                               <span className="w-2 h-2 rounded-full bg-[#0084ca] flex-shrink-0 mt-1" />
@@ -410,7 +424,9 @@ export function Header({
             {mobileMenuOpen && (
               <div className="md:hidden absolute top-16 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-40">
                 <div className="flex flex-col p-4 space-y-1">
-                  <button
+                  <Link
+                    to={TALENT_ROUTES.DASHBOARD.path}
+                    onClick={() => setMobileMenuOpen(false)}
                     className={`text-sm font-medium text-left px-3 py-2 rounded-lg ${
                       darkMode
                         ? "text-gray-300 hover:text-[#0084ca] hover:bg-gray-700"
@@ -418,7 +434,7 @@ export function Header({
                     }`}
                   >
                     Find Jobs
-                  </button>
+                  </Link>
                   <Link
                     to={TALENT_ROUTES.APPLICATIONS.path}
                     onClick={() => setMobileMenuOpen(false)}

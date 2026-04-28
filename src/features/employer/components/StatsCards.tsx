@@ -67,15 +67,15 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ stats, darkMode = false 
           className={`rounded-xl border p-5 transition-shadow hover:shadow-md ${
             darkMode
               ? `bg-gray-800 border-gray-700`
-              : `bg-white border-gray-100 shadow-sm`
+              : `bg-white border-slate-200 shadow-sm`
           }`}
         >
           <div className="flex items-start justify-between">
             <div>
-              <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+              <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
                 {label}
               </p>
-              <p className={`text-3xl font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>
+              <p className={`text-2xl sm:text-3xl font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>
                 {stats[key]}
               </p>
             </div>

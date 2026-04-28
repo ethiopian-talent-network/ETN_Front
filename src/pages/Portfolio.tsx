@@ -914,7 +914,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ darkMode = false }) => {
         </div>
 
         {/* Certificates Section */}
-        <div className={`p-6 rounded-xl ${darkMode ? "bg-gray-800" : "bg-white shadow-lg"}`}>
+        <div className={`p-6 rounded-xl ${darkMode ? "bg-gray-800" : "bg-white shadow-lg relative top-2"}`}>
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
@@ -944,14 +944,14 @@ const Portfolio: React.FC<PortfolioProps> = ({ darkMode = false }) => {
                   <input type="text" value={certForm.title}
                     onChange={(e) => setCertForm((p) => ({ ...p, title: e.target.value }))}
                     className={`w-full px-3 py-2.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 ${darkMode ? "bg-gray-600 border-gray-500 text-white" : "bg-white border-gray-300"}`}
-                    placeholder="e.g. AWS Certified Developer" />
+                    placeholder="e.g. ALX Certified Developer" />
                 </div>
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>Issuing Organization</label>
                   <input type="text" value={certForm.organization || ""}
                     onChange={(e) => setCertForm((p) => ({ ...p, organization: e.target.value }))}
                     className={`w-full px-3 py-2.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 ${darkMode ? "bg-gray-600 border-gray-500 text-white" : "bg-white border-gray-300"}`}
-                    placeholder="e.g. Amazon" />
+                    placeholder="e.g. ALX" />
                 </div>
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>Credential ID</label>
@@ -977,7 +977,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ darkMode = false }) => {
                   <input type="url" value={certForm.credential_url || ""}
                     onChange={(e) => setCertForm((p) => ({ ...p, credential_url: e.target.value }))}
                     className={`w-full px-3 py-2.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 ${darkMode ? "bg-gray-600 border-gray-500 text-white" : "bg-white border-gray-300"}`}
-                    placeholder="https://verify.example.com/cert/..." />
+                    placeholder=" " />
                 </div>
               </div>
               <div className="flex gap-3 mt-5">

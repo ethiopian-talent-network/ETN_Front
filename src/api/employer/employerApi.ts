@@ -52,6 +52,7 @@ export const fetchAllApplications = async (
         jobGroup.applications.forEach((app: any) => {
           allApplications.push({
             ...app,
+            job_id: jobGroup.job_id,
             job_title: jobGroup.job_title,
             company_name: jobGroup.company_name,
             company_location: jobGroup.company_location,
@@ -68,6 +69,10 @@ export const fetchAllApplications = async (
       talent_id: app.talent_id,
       talent_name: app.talent_name,
       talent_email: app.talent_email,
+      profile_image: app.talent_profile_image,
+      about: app.talent_about,
+      talent_location: app.talent_location,
+      hourly_rate: app.talent_hourly_rate,
       cover_letter: firstProposal.cover_letter ?? "",
       proposal: firstProposal.proposal ?? "",
       status: app.application_status,

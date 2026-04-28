@@ -42,6 +42,8 @@ export default function Login() {
         ? from
         : role === "employer"
           ? "/employer-dashboard"
+          : role === "owner"
+          ? "/owner"
           : "/talent-dashboard";
 
       navigate(destination, { replace: true });

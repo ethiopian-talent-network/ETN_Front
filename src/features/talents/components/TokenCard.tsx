@@ -26,7 +26,7 @@ export function TokenCard() {
   if (loading) {
     return (
       <div className="lg:col-span-1 order-first lg:order-last">
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg p-4 sm:p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm p-4 sm:p-6">
           <div className="animate-pulse space-y-3">
             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
             <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>

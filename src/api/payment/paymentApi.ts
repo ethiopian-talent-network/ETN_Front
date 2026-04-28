@@ -1,0 +1,73 @@
+import { API_BASE_URL } from "../../config/api";
+
+const authHeaders = (token: string) => ({
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${token}`,
+});
+
+export interface EscrowInfo {
+  id: number;
+  job_id: number;
+  talent_id: number;
+  employer_id: number;
+  amount: number;
+  currency: string;
+  status: "pending" | "funded" | "released" | "failed";
+  treansaction_ref: string;
+  talent_name: string;
+  talent_email: string;
+}
+
+// POST /api/payment/initialize — employer funds escrow via Chapa
+export const initializePayment = async (
+  token: string,
+  data: { job_id: number; amount: number; currency: string; method: string },
+): Promise<{ check_url: string }> => {
+  const res = await fetch(`${API_BASE_URL}/api/payment/initialize`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to initialize payment");
+  return json;
+};
+
+// POST /api/payment/verify — verify Chapa transaction after redirect
+export const verifyPayment = async (tx_ref: string): Promise<{ message: string }> => {
+  const res = await fetch(`${API_BASE_URL}/api/payment/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tx_ref }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Verification failed");
+  return json;
+};
+
+// GET /api/payment/escrow/:job_id — get escrow status for a job
+export const getEscrowStatus = async (
+  token: string,
+  job_id: number,
+): Promise<{ escrow: EscrowInfo }> => {
+  const res = await fetch(`${API_BASE_URL}/api/payment/escrow/${job_id}`, {
+    headers: authHeaders(token),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to fetch escrow");
+  return json;
+};
+
+// POST /api/payment/release/:job_id — employer approves work and releases payment
+export const releasePayment = async (
+  token: string,
+  job_id: number,
+): Promise<{ message: string }> => {
+  const res = await fetch(`${API_BASE_URL}/api/payment/release/${job_id}`, {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to release payment");
+  return json;
+};

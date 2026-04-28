@@ -145,15 +145,15 @@ export default function TalentsDashboard() {
     }
   };
 
-  const bgClass = darkMode ? "bg-gray-900" : "bg-gray-50";
+  const bgClass = darkMode ? "bg-gray-900" : "bg-slate-100";
   const cardClass = darkMode
     ? "bg-gray-800 border-gray-700"
-    : "bg-white border-gray-200";
+    : "bg-white border-slate-200 shadow-sm";
   const textClass = darkMode ? "text-white" : "text-gray-900";
   const mutedClass = darkMode ? "text-gray-400" : "text-gray-600";
   const inputClass = darkMode
     ? "bg-gray-700 border-gray-600 text-white"
-    : "bg-white border-gray-300";
+    : "bg-white border-slate-300 text-gray-900";
 
   return (
     <div className={`min-h-screen ${bgClass} transition-colors duration-300`}>
@@ -198,7 +198,7 @@ export default function TalentsDashboard() {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-4 mb-8 border-b border-gray-300 dark:border-gray-700">
+        <div className="flex gap-4 mb-8 border-b border-slate-300 dark:border-gray-700">
           {[
             { id: "network", label: "Network" },
             { id: "requests", label: `Requests (${requests.length})` },
@@ -218,7 +218,7 @@ export default function TalentsDashboard() {
               }
               className={`px-4 py-2 font-medium transition-colors ${
                 activeTab === tab.id
-                  ? "border-b-2 border-blue-500 text-blue-600"
+                  ? "border-b-2 border-[#0084ca] text-[#0084ca]"
                   : mutedClass
               }`}
             >
@@ -236,7 +236,7 @@ export default function TalentsDashboard() {
               connections.map((conn) => (
                 <div
                   key={conn.id}
-                  className={`${cardClass} rounded-lg border p-6 shadow-md hover:shadow-lg transition-shadow`}
+                  className={`${cardClass} rounded-xl border p-6 hover:shadow-md transition-shadow`}
                 >
                   <div className="flex items-start gap-4">
                     {conn.profile_image && (
@@ -264,7 +264,7 @@ export default function TalentsDashboard() {
                         {conn.skills.split(",").slice(0, 3).map((skill, i) => (
                           <span
                             key={i}
-                            className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 text-xs rounded"
+                            className="px-2 py-1 bg-[#0084ca]/10 dark:bg-blue-900 text-[#0084ca] dark:text-blue-200 text-xs rounded-full font-medium"
                           >
                             {skill.trim()}
                           </span>
@@ -274,7 +274,7 @@ export default function TalentsDashboard() {
                   )}
                   <button
                     onClick={() => handleSelectConnection(conn)}
-                    className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    className="mt-4 w-full px-4 py-2 bg-[#0084ca] hover:bg-[#006ba6] text-white rounded-lg transition-colors font-medium text-sm"
                   >
                     Message
                   </button>
@@ -293,7 +293,7 @@ export default function TalentsDashboard() {
               requests.map((req) => (
                 <div
                   key={req.id}
-                  className={`${cardClass} rounded-lg border p-6 flex items-center justify-between`}
+                  className={`${cardClass} rounded-xl border p-6 flex items-center justify-between`}
                 >
                   <div className="flex items-center gap-4 flex-1">
                     {req.profile_image && (
@@ -312,7 +312,7 @@ export default function TalentsDashboard() {
                   </div>
                   <button
                     onClick={() => handleAcceptRequest(req.id)}
-                    className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors font-medium text-sm"
                   >
                     Accept
                   </button>
@@ -326,7 +326,7 @@ export default function TalentsDashboard() {
         {activeTab === "messages" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Connections List */}
-            <div className={`${cardClass} rounded-lg border p-4`}>
+            <div className={`${cardClass} rounded-xl border p-4`}>
               <h3 className={`font-semibold ${textClass} mb-4`}>
                 Conversations
               </h3>
@@ -337,8 +337,8 @@ export default function TalentsDashboard() {
                     onClick={() => handleSelectConnection(conn)}
                     className={`w-full text-left p-3 rounded transition-colors ${
                       selectedConnection?.id === conn.id
-                        ? "bg-blue-100 dark:bg-blue-900"
-                        : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                        ? "bg-[#0084ca]/10 text-[#0084ca] font-medium"
+                        : "hover:bg-slate-100 dark:hover:bg-gray-700"
                     }`}
                   >
                     <p className={`font-medium ${textClass}`}>{conn.name}</p>
@@ -349,7 +349,7 @@ export default function TalentsDashboard() {
 
             {/* Chat Window */}
             {selectedConnection ? (
-              <div className={`lg:col-span-2 ${cardClass} rounded-lg border p-6 flex flex-col`}>
+              <div className={`lg:col-span-2 ${cardClass} rounded-xl border p-6 flex flex-col`}>
                 <h3 className={`font-semibold ${textClass} mb-4`}>
                   {selectedConnection.name}
                 </h3>
@@ -366,8 +366,8 @@ export default function TalentsDashboard() {
                       <div
                         className={`max-w-xs px-4 py-2 rounded-lg ${
                           msg.sender_id === selectedConnection.sender_id
-                            ? "bg-gray-200 dark:bg-gray-700"
-                            : "bg-blue-600 text-white"
+                            ? "bg-slate-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+                            : "bg-[#0084ca] text-white"
                         }`}
                       >
                         <p className="text-sm">{msg.content}</p>
@@ -387,18 +387,18 @@ export default function TalentsDashboard() {
                       e.key === "Enter" && handleSendMessage()
                     }
                     placeholder="Type a message..."
-                    className={`flex-1 px-4 py-2 rounded border ${inputClass}`}
+                    className={`flex-1 px-4 py-2 rounded-lg border ${inputClass} outline-none focus:ring-2 focus:ring-[#0084ca]/30`}
                   />
                   <button
                     onClick={handleSendMessage}
-                    className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    className="px-5 py-2 bg-[#0084ca] hover:bg-[#006ba6] text-white rounded-lg transition-colors font-medium"
                   >
                     Send
                   </button>
                 </div>
               </div>
             ) : (
-              <div className={`lg:col-span-2 ${cardClass} rounded-lg border p-6 flex items-center justify-center`}>
+              <div className={`lg:col-span-2 ${cardClass} rounded-xl border p-6 flex items-center justify-center`}>
                 <p className={mutedClass}>Select a conversation to start messaging</p>
               </div>
             )}
@@ -420,7 +420,7 @@ export default function TalentsDashboard() {
                   endorsements.map((endorsement) => (
                     <div
                       key={endorsement.id}
-                      className={`${cardClass} rounded-lg border p-4`}
+                      className={`${cardClass} rounded-xl border p-4`}
                     >
                       <div className="flex items-center justify-between">
                         <div>
@@ -431,7 +431,7 @@ export default function TalentsDashboard() {
                             {endorsement.endorsement_count} endorsements
                           </p>
                         </div>
-                        <div className="text-2xl font-bold text-blue-600">
+                        <div className="text-2xl font-bold text-[#0084ca]">
                           {endorsement.endorsement_count}
                         </div>
                       </div>
@@ -455,7 +455,7 @@ export default function TalentsDashboard() {
                 {network.map((talent) => (
                   <div
                     key={talent.talent_id}
-                    className={`${cardClass} rounded-lg border p-6`}
+                    className={`${cardClass} rounded-xl border p-6`}
                   >
                     <div className="flex items-center gap-3 mb-4">
                       {talent.profile_image && (
@@ -482,7 +482,7 @@ export default function TalentsDashboard() {
                             onClick={() =>
                               handleEndorseSkill(talent.talent_id ?? 0, i + 1)
                             }
-                            className="w-full px-3 py-2 text-sm bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 rounded hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                            className="w-full px-3 py-2 text-sm bg-[#0084ca]/10 dark:bg-blue-900 text-[#0084ca] dark:text-blue-200 rounded-lg hover:bg-[#0084ca]/20 dark:hover:bg-blue-800 transition-colors font-medium"
                           >
                             Endorse: {skill.trim()}
                           </button>

@@ -19,7 +19,12 @@ import JobApplications from "./pages/JobApplications";
 import ApplyToJob from "./pages/ApplyToJob";
 import ProposalsPage from "./pages/employer/ProposalsPage";
 import AllProposalsPage from "./features/employer/components/ProposalsPage";
+import EscrowPaymentPage from "./pages/employer/EscrowPaymentPage";
 import Portfolio from "./pages/Portfolio";
+import NotificationsPage from "./pages/NotificationsPage";
+import OwnerDashboard from "./pages/owner/OwnerDashboard";
+import InternalLogin from "./pages/admin/InternalLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import { DarkModeProvider } from "./contexts/DarkModeContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/routes/ProtectedRoute";
@@ -32,6 +37,7 @@ import {
   TALENT_ROUTES,
   EMPLOYER_ROUTES,
   SHARED_ROUTES,
+  OWNER_ROUTES,
 } from "./config/routes";
 
 function App() {
@@ -145,6 +151,14 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path={TALENT_ROUTES.NOTIFICATIONS.path}
+                element={
+                  <ProtectedRoute allowedRoles={["talent"]}>
+                    <NotificationsPage />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Shared routes - Both talent and employer */}
               <Route
@@ -205,6 +219,21 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path={EMPLOYER_ROUTES.ESCROW_PAYMENT.path}
+                element={
+                  <ProtectedRoute allowedRoles={["employer"]}>
+                    <EscrowPaymentPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Internal portal routes — no auth wrapper, handled internally */}
+              <Route path="/admin/login" element={<InternalLogin />} />
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
+              {/* Owner route */}
+              <Route path={OWNER_ROUTES.DASHBOARD.path} element={<OwnerDashboard />} />
 
               {/* Error routes */}
               <Route

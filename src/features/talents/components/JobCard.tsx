@@ -31,7 +31,7 @@ export function JobCard({
   return (
     <div
       className={`border rounded-xl p-6 hover:shadow-xl transition-all duration-300 hover:border-[#0084ca] hover:-translate-y-1 ${
-        darkMode ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"
+        darkMode ? "border-gray-700 bg-gray-800" : "border-slate-200 bg-white shadow-sm"
       }`}
     >
       {/* Job Header */}
@@ -137,7 +137,7 @@ export function JobCard({
             className={`px-2 py-1 text-xs rounded-full ${
               darkMode
                 ? "bg-gray-700 text-gray-300"
-                : "bg-gray-100 text-gray-600"
+                : "bg-slate-100 text-gray-700 border border-slate-200"
             }`}
           >
             {skill}

@@ -55,7 +55,7 @@ export const TalentList: React.FC<TalentListProps> = ({
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className={`rounded-xl border p-5 animate-pulse ${dm ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"}`}>
+          <div key={i} className={`rounded-xl border p-5 animate-pulse ${dm ? "bg-gray-800 border-gray-700" : "bg-white border-slate-200"}`}>
             <div className="flex items-center gap-3 mb-4">
               <div className={`w-12 h-12 rounded-full ${dm ? "bg-gray-700" : "bg-gray-200"}`} />
               <div className="flex-1 space-y-2">
@@ -83,7 +83,7 @@ export const TalentList: React.FC<TalentListProps> = ({
     <div className="space-y-5">
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className={`flex items-center gap-2 flex-1 px-3 py-2.5 rounded-lg border text-sm ${dm ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200 shadow-sm"}`}>
+        <div className={`flex items-center gap-2 flex-1 px-3 py-2.5 rounded-lg border text-sm ${dm ? "bg-gray-800 border-gray-700" : "bg-white border-slate-300 shadow-sm"}`}>
           <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
           <input
             value={search}
@@ -95,7 +95,7 @@ export const TalentList: React.FC<TalentListProps> = ({
         <select
           value={skillFilter}
           onChange={(e) => setSkillFilter(e.target.value)}
-          className={`px-3 py-2.5 rounded-lg border text-sm outline-none ${dm ? "bg-gray-800 border-gray-700 text-white" : "bg-white border-gray-200 text-gray-700 shadow-sm"}`}
+          className={`px-3 py-2.5 rounded-lg border text-sm outline-none ${dm ? "bg-gray-800 border-gray-700 text-white" : "bg-white border-slate-300 text-gray-800 shadow-sm"}`}
         >
           <option value="">All Skills</option>
           {allSkills.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -108,7 +108,7 @@ export const TalentList: React.FC<TalentListProps> = ({
       </p>
 
       {filtered.length === 0 ? (
-        <div className={`rounded-xl border py-16 text-center ${dm ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100 shadow-sm"}`}>
+        <div className={`rounded-xl border py-16 text-center ${dm ? "bg-gray-800 border-gray-700" : "bg-white border-slate-200 shadow-sm"}`}>
           <div className={`w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center ${dm ? "bg-gray-700" : "bg-gray-100"}`}>
             <Search className={`w-6 h-6 ${dm ? "text-gray-500" : "text-gray-400"}`} />
           </div>
@@ -122,7 +122,7 @@ export const TalentList: React.FC<TalentListProps> = ({
               key={talent.id}
               onClick={() => onViewProfile?.(talent.id)}
               className={`group relative cursor-pointer rounded-xl border transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${
-                dm ? "bg-gray-800 border-gray-700 hover:border-gray-600" : "bg-white border-gray-100 shadow-sm hover:border-[#0084ca]/30 hover:shadow-[#0084ca]/10"
+                dm ? "bg-gray-800 border-gray-700 hover:border-gray-600" : "bg-white border-slate-200 shadow-sm hover:border-[#0084ca]/40 hover:shadow-[#0084ca]/10"
               }`}
             >
               {/* Top accent line */}
@@ -178,7 +178,7 @@ export const TalentList: React.FC<TalentListProps> = ({
                   <div className="flex flex-wrap gap-1.5 mb-4">
                     {talent.skills.slice(0, 4).map((skill, i) => (
                       <span key={i} className={`px-2 py-0.5 rounded-md text-xs font-medium ${
-                        dm ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-600"
+                        dm ? "bg-gray-700 text-gray-300" : "bg-slate-100 text-gray-700"
                       }`}>
                         {skill}
                       </span>
@@ -192,7 +192,7 @@ export const TalentList: React.FC<TalentListProps> = ({
                 )}
 
                 {/* Footer */}
-                <div className={`flex items-center justify-between pt-3 border-t ${dm ? "border-gray-700" : "border-gray-100"}`}>
+                <div className={`flex items-center justify-between pt-3 border-t ${dm ? "border-gray-700" : "border-slate-200"}`}>
                   <span className={`text-xs ${dm ? "text-gray-500" : "text-gray-400"}`}>
                     Joined {new Date(talent.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
                   </span>

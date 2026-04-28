@@ -20,8 +20,19 @@ export interface Message {
 export interface Conversation {
   id: string;
   participants: User[];
-  lastMessage: Message;
+  lastMessage?: Message;
   jobTitle?: string;
   unread?: number;
   timestamp?: string;
+}
+
+export interface Connection {
+  id: string;
+  name: string;
+  avatar?: string;
+  role?: string;
+  about?: string;
+  online?: boolean;
+  talent_id?: number;
+  sender_id?: number;
 }

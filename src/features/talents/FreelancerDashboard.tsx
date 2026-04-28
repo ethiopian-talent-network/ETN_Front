@@ -69,7 +69,7 @@ export default function FreelancerDashboard() {
   return (
     <div
       className={`min-h-screen transition-colors duration-300 ${
-        darkMode ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"
+        darkMode ? "bg-gray-900" : "bg-slate-100"
       }`}
     >
       <Header
@@ -88,7 +88,7 @@ export default function FreelancerDashboard() {
 
           <div className="lg:col-span-3 space-y-6">
             {/* Journey Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg p-4 sm:p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm p-4 sm:p-6">
               <h2
                 className={`text-lg sm:text-xl font-bold mb-4 sm:mb-6 transition-colors duration-300 ${
                   darkMode ? "text-white" : "text-gray-900"
@@ -104,7 +104,7 @@ export default function FreelancerDashboard() {
               className={`rounded-xl shadow-lg overflow-hidden transition-colors duration-300 ${
                 darkMode
                   ? "bg-gray-800 border-gray-700"
-                  : "bg-white border-gray-200"
+                  : "bg-white border-slate-200"
               }`}
             >
               <JobFilters

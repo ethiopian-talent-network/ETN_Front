@@ -125,6 +125,12 @@ export const TALENT_ROUTES: Record<string, RouteConfig> = {
     roles: [RouteRole.TALENT],
     description: "Discover and connect with talents",
   },
+  NOTIFICATIONS: {
+    path: "/notifications",
+    title: "Notifications",
+    roles: [RouteRole.TALENT],
+    description: "View all notifications",
+  },
 };
 
 /**
@@ -166,6 +172,20 @@ export const EMPLOYER_ROUTES: Record<string, RouteConfig> = {
     title: "All Proposals",
     roles: [RouteRole.EMPLOYER],
     description: "View all proposals and applications",
+  },
+  ESCROW_PAYMENT: {
+    path: "/escrow-payment/:job_id",
+    title: "Escrow Payment",
+    roles: [RouteRole.EMPLOYER],
+    description: "Fund escrow and release payment for a job",
+  },
+};
+
+export const OWNER_ROUTES: Record<string, RouteConfig> = {
+  DASHBOARD: {
+    path: "/owner",
+    title: "Owner Dashboard",
+    description: "Platform payment management",
   },
 };
 

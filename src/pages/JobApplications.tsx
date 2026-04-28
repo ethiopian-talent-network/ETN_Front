@@ -440,11 +440,11 @@ export default function JobApplications() {
               return (
                 <div
                   key={application.id}
-                  className={`p-6 rounded-xl border hover:shadow-lg transition-shadow ${
+                  className={`p-6 rounded-xl border transition-all duration-200 ${
                     darkMode
-                      ? "bg-gray-800 border-gray-700"
-                      : "bg-white border-gray-200"
-                  }`}
+                      ? "bg-gray-800 border-gray-700 hover:border-gray-600"
+                      : "bg-white border-gray-200 hover:border-gray-300"
+                  } hover:shadow-xl transform hover:-translate-y-1`}
                 >
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                     <div className="flex-1">
@@ -469,7 +469,7 @@ export default function JobApplications() {
                           />
                         </div>
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <h3
                               className={`text-lg font-semibold ${
                                 darkMode ? "text-white" : "text-gray-900"

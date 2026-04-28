@@ -642,7 +642,7 @@ export const getAllTalents = async (options?: {
 
 export interface Notification {
   id: number;
-  type: "connection_request" | "connection_accepted";
+  type: "connection_request" | "connection_accepted" | "new_message";
   title: string;
   message: string;
   connection_id: number;
@@ -700,4 +700,62 @@ export const declineConnectionNotification = async (connection_id: number): Prom
     throw new Error(err.message || "Failed to decline connection");
   }
   return response.json();
+};
+
+// ── Real Messaging API ────────────────────────────────────────────────────────
+
+export interface RealMessage {
+  id: number;
+  sender_id: number;
+  reciver_id: number;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+  sender_name: string;
+  sender_image?: string;
+}
+
+export interface Conversation {
+  user_id: number;
+  name: string;
+  profile_image?: string;
+  last_message: string;
+  last_message_at: string;
+  unread_count: number;
+}
+
+export const getConversations = async (): Promise<{ conversations: Conversation[] }> => {
+  const response = await fetch(`${API_BASE_URL}/api/messages/conversations`, {
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+  });
+  if (!response.ok) throw new Error("Failed to fetch conversations");
+  return response.json();
+};
+
+export const getRealMessages = async (reciver_id: number): Promise<{ messages: RealMessage[] }> => {
+  const response = await fetch(`${API_BASE_URL}/api/messages?reciver_id=${reciver_id}`, {
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+  });
+  if (!response.ok) throw new Error("Failed to fetch messages");
+  return response.json();
+};
+
+export const sendRealMessage = async (reciver_id: number, content: string): Promise<{ message: string; data: RealMessage }> => {
+  const response = await fetch(`${API_BASE_URL}/api/messages/send`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify({ reciver_id, content }),
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.message || "Failed to send message");
+  }
+  return response.json();
+};
+
+export const markConversationRead = async (sender_id: number): Promise<void> => {
+  await fetch(`${API_BASE_URL}/api/messages/${sender_id}/read`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+  });
 };

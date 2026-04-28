@@ -112,14 +112,14 @@ export const EmployerDashboard: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen ${dm ? "bg-gray-900" : "bg-gray-50"}`}>
+    <div className={`min-h-screen ${dm ? "bg-gray-900" : "bg-slate-100"}`}>
       <Header />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page title */}
         <div className="mb-6">
-          <h1 className={`text-2xl font-bold ${dm ? "text-white" : "text-gray-900"}`}>Dashboard</h1>
-          <p className={`text-sm mt-0.5 ${dm ? "text-gray-400" : "text-gray-500"}`}>
+          <h1 className={`text-xl sm:text-2xl font-bold ${dm ? "text-white" : "text-gray-900"}`}>Dashboard</h1>
+          <p className={`text-sm mt-0.5 ${dm ? "text-gray-400" : "text-gray-600"}`}>
             Manage your jobs, review applications, and hire top talent.
           </p>
         </div>

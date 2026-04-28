@@ -6,13 +6,13 @@ import {
   type ReactNode,
 } from "react";
 
-const SESSION_DURATION = 60 * 60 * 1000; // 1 hour in ms
+const SESSION_DURATION = 8 * 60 * 60 * 1000; // 8 hours in ms
 
 export interface User {
   id: number;
   email: string;
   name: string;
-  role: "talent" | "employer" | "admin";
+  role: "talent" | "employer" | "admin" | "owner";
 }
 
 export interface AuthContextType {
@@ -38,7 +38,7 @@ const clearSession = () => {
 
 const isSessionExpired = (): boolean => {
   const loginAt = localStorage.getItem("loginAt");
-  if (!loginAt) return true;
+  if (!loginAt) return false; // no loginAt = old session, let backend JWT decide
   return Date.now() - parseInt(loginAt) > SESSION_DURATION;
 };
 
@@ -74,6 +74,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const storedUser = localStorage.getItem("user");
 
       if (storedToken && storedUser) {
+        // Migrate old sessions that have no loginAt — set it now so expiry works going forward
+        if (!localStorage.getItem("loginAt")) {
+          localStorage.setItem("loginAt", Date.now().toString());
+        }
         if (isSessionExpired()) {
           clearSession();
           setIsLoading(false);
