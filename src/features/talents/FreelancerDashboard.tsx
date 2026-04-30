@@ -7,6 +7,7 @@ import { JobFilters } from "./components/JobFilters";
 import { JobList } from "./components/JobList";
 import { JobModal } from "./components/JobModal";
 import { profileService } from "../../api/profile/profileService";
+import { Footer } from "./components/Footer";
 import type { Job, JobSection, JobFilter } from "./types";
 
 export default function FreelancerDashboard() {
@@ -68,7 +69,7 @@ export default function FreelancerDashboard() {
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-300 ${
+      className={`min-h-screen flex flex-col transition-colors duration-300 ${
         darkMode ? "bg-gray-900" : "bg-slate-100"
       }`}
     >
@@ -79,7 +80,7 @@ export default function FreelancerDashboard() {
         onImageUpload={handleImageUpload}
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
           <div className="lg:col-span-1 space-y-6">
             <ProfileCard darkMode={darkMode} />
@@ -147,6 +148,7 @@ export default function FreelancerDashboard() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

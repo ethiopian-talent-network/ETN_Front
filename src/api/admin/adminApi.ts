@@ -38,3 +38,14 @@ export const deleteUser = (token: string, id: number) =>
   fetch(`${API_BASE_URL}/api/admin/users/${id}`, {
     method: "DELETE", headers: h(token),
   }).then((r) => r.json());
+
+export const getVerificationRequests = (token: string, status = "pending") =>
+  fetch(`${API_BASE_URL}/api/admin/verification-requests?status=${status}`, { headers: h(token) }).then((r) => r.json());
+
+export const reviewVerification = (token: string, id: number, action: "approve" | "reject", admin_note?: string) =>
+  fetch(`${API_BASE_URL}/api/admin/verification-requests/${id}`, {
+    method: "PATCH", headers: h(token), body: JSON.stringify({ action, admin_note }),
+  }).then((r) => r.json());
+
+export const getTalentProfileForAdmin = (token: string, userId: number) =>
+  fetch(`${API_BASE_URL}/api/admin/talent-profile/${userId}`, { headers: h(token) }).then((r) => r.json());

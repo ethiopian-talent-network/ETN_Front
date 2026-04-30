@@ -131,7 +131,7 @@ export function JobCard({
 
       {/* Skills Tags */}
       <div className="flex flex-wrap gap-2 mb-4">
-        {job.skills.map((skill, index) => (
+        {(job.skills ?? []).map((skill, index) => (
           <span
             key={index}
             className={`px-2 py-1 text-xs rounded-full ${

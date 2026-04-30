@@ -19,8 +19,7 @@ export class JobService {
   private jobsCache: Map<string, Job[]> = new Map();
   private jobDetailCache: Map<number, Job> = new Map();
   private cacheExpiry: Map<string, number> = new Map();
-  private CACHE_DURATION = 2 * 60 * 1000; // 2 minutes fresh
-  private STALE_DURATION = 10 * 60 * 1000; // 10 minutes stale-while-revalidate
+  private CACHE_DURATION = 0; // Always fetch fresh — skills and applicants must be live
   private inflightRequests: Map<string, Promise<Job[]>> = new Map();
 
   // Check if cache is valid (fresh)

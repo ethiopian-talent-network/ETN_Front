@@ -4,12 +4,14 @@ import { useDarkMode } from "../../contexts/DarkModeContext";
 import {
   getAdminDashboard, getAdminUsers,
   createOwner, toggleUser, deleteUser,
+  getVerificationRequests, reviewVerification, getTalentProfileForAdmin,
 } from "../../api/admin/adminApi";
 import {
-  Users, Briefcase, DollarSign, ShieldCheck, Plus, Search,
+  Users, Briefcase, DollarSign, ShieldCheck, Search,
   RefreshCw, Loader2, AlertCircle, CheckCircle, XCircle,
   ToggleLeft, ToggleRight, Trash2, Sun, Moon, TrendingUp,
-  UserPlus, Building2, Crown, FileText, ChevronLeft, ChevronRight,
+  Building2, Crown, FileText, ChevronLeft, ChevronRight,
+  Eye, ThumbsUp, ThumbsDown, ExternalLink, Award, FolderOpen,
 } from "lucide-react";
 
 function useInternalAuth() {
@@ -33,9 +35,15 @@ export default function AdminDashboard() {
   const { token, user } = useInternalAuth();
   const dm = darkMode;
 
-  const [tab, setTab] = useState<"overview" | "users">("overview");
+  const [tab, setTab] = useState<"overview" | "users" | "verification">("overview");
   const [stats, setStats] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
+  const [verificationRequests, setVerificationRequests] = useState<any[]>([]);
+  const [verifLoading, setVerifLoading] = useState(false);
+  const [actionVerifId, setActionVerifId] = useState<number | null>(null);
+  const [adminNote, setAdminNote] = useState<Record<number, string>>({});
+  const [profileModal, setProfileModal] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [roleFilter, setRoleFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -75,6 +83,18 @@ export default function AdminDashboard() {
 
   useEffect(() => { loadStats(); }, [loadStats]);
   useEffect(() => { if (tab === "users") loadUsers(1); }, [tab, loadUsers]);
+  const loadVerifications = useCallback(async () => {
+    setVerifLoading(true);
+    try {
+      const d = await getVerificationRequests(token);
+      setVerificationRequests(d.requests || []);
+    } catch {}
+    finally { setVerifLoading(false); }
+  }, [token]);
+
+  useEffect(() => {
+    if (tab === "verification") loadVerifications();
+  }, [tab, loadVerifications]);
 
   const handleToggle = async (id: number) => {
     setActionId(id);
@@ -110,6 +130,29 @@ export default function AdminDashboard() {
       }
     } catch (e: any) { setError(e.message); }
     finally { setFormLoading(false); }
+  };
+
+  const handleVerification = async (id: number, action: "approve" | "reject") => {
+    setActionVerifId(id);
+    try {
+      const data = await reviewVerification(token, id, action, adminNote[id] || "");
+      if (data.message?.toLowerCase().includes("error")) throw new Error(data.message);
+      setSuccess(data.message);
+      setVerificationRequests(prev => prev.filter(r => r.id !== id));
+      setProfileModal(null);
+      loadStats();
+    } catch (e: any) { setError(e.message); }
+    finally { setActionVerifId(null); }
+  };
+
+  const openProfile = async (req: any) => {
+    setProfileLoading(true);
+    setProfileModal({ request: req, data: null });
+    try {
+      const d = await getTalentProfileForAdmin(token, req.user_id);
+      setProfileModal({ request: req, data: d });
+    } catch { setProfileModal(null); setError("Failed to load talent profile"); }
+    finally { setProfileLoading(false); }
   };
 
   const logout = () => {
@@ -190,12 +233,23 @@ export default function AdminDashboard() {
         {/* Tabs + actions */}
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div className={`flex items-center gap-1 p-1 rounded-xl ${dm ? "bg-gray-800" : "bg-slate-200"}`}>
-            {(["overview", "users"] as const).map((t) => (
+            {(["overview", "users", "verification"] as const).map((t) => (
               <button key={t} onClick={() => setTab(t)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${
                   tab === t ? "bg-white shadow-sm text-amber-600 dark:bg-gray-700" : dm ? "text-gray-400 hover:text-gray-200" : "text-gray-600 hover:text-gray-900"
                 }`}
-              >{t}</button>
+              >
+                {t === "verification" ? (
+                  <span className="flex items-center gap-1.5">
+                    Verification
+                    {verificationRequests.length > 0 && tab !== "verification" && (
+                      <span className="w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                        {verificationRequests.length}
+                      </span>
+                    )}
+                  </span>
+                ) : t}
+              </button>
             ))}
           </div>
 
@@ -348,9 +402,264 @@ export default function AdminDashboard() {
             </div>
           </>
         )}
+        {/* ── VERIFICATION ── */}
+        {tab === "verification" && (
+          <>
+            <div className="flex items-center justify-between mb-5">
+              <h1 className={`text-xl font-bold ${text}`}>Verification Requests</h1>
+              <button onClick={loadVerifications} className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg transition-colors ${dm ? "hover:bg-gray-800 text-gray-400" : "hover:bg-slate-200 text-gray-500"}`}>
+                <RefreshCw className="w-4 h-4" /> Refresh
+              </button>
+            </div>
+            {verifLoading ? (
+              <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-amber-500" /></div>
+            ) : verificationRequests.length === 0 ? (
+              <div className={`rounded-xl border p-16 text-center ${card}`}>
+                <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
+                <p className={`font-medium ${text}`}>No pending requests</p>
+                <p className={`text-sm mt-1 ${muted}`}>All verification requests have been reviewed.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {verificationRequests.map((req) => (
+                  <div key={req.id} className={`rounded-xl border p-5 ${card}`}>
+                    <div className="flex items-start gap-4">
+                      {req.profile_image ? (
+                        <img src={req.profile_image} alt={req.name} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+                      ) : (
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 ${dm ? "bg-gray-700 text-gray-300" : "bg-slate-200 text-gray-600"}`}>
+                          {req.name?.[0]?.toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 flex-wrap">
+                          <div>
+                            <p className={`font-semibold ${text}`}>{req.name}</p>
+                            <p className={`text-sm ${muted}`}>{req.email}</p>
+                          </div>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${dm ? "bg-amber-900/30 text-amber-300" : "bg-amber-100 text-amber-700"}`}>
+                            {new Date(req.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          </span>
+                        </div>
+                        {req.message && (
+                          <p className={`text-sm mt-2 italic ${muted}`}>"{req.message}"</p>
+                        )}
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button
+                            onClick={() => openProfile(req)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${dm ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-slate-100 text-gray-700 hover:bg-slate-200"}`}
+                          >
+                            <Eye className="w-3.5 h-3.5" /> View Profile
+                          </button>
+                          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs flex-1 min-w-[160px] ${dm ? "bg-gray-800 border-gray-700" : "bg-white border-slate-300"}`}>
+                            <input
+                              value={adminNote[req.id] || ""}
+                              onChange={(e) => setAdminNote(n => ({ ...n, [req.id]: e.target.value }))}
+                              placeholder="Note (optional)"
+                              className={`bg-transparent outline-none flex-1 ${dm ? "text-white placeholder-gray-500" : "text-gray-900 placeholder-gray-400"}`}
+                            />
+                          </div>
+                          <button
+                            onClick={() => handleVerification(req.id, "approve")}
+                            disabled={actionVerifId === req.id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold transition-colors disabled:opacity-50"
+                          >
+                            {actionVerifId === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ThumbsUp className="w-3.5 h-3.5" />}
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleVerification(req.id, "reject")}
+                            disabled={actionVerifId === req.id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-semibold transition-colors disabled:opacity-50"
+                          >
+                            <ThumbsDown className="w-3.5 h-3.5" /> Reject
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
 
-      {/* ── Modal ── */}
+      {/* ── Profile Modal ── */}
+      {profileModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setProfileModal(null)}>
+          <div className={`w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border shadow-2xl ${dm ? "bg-gray-900 border-gray-800" : "bg-white border-slate-200"}`} onClick={e => e.stopPropagation()}>
+            <div className={`sticky top-0 px-6 py-4 border-b flex items-center justify-between ${dm ? "bg-gray-900 border-gray-800" : "bg-white border-slate-200"}`}>
+              <h2 className={`font-semibold ${text}`}>Talent Profile Review</h2>
+              <button onClick={() => setProfileModal(null)} className={`p-1.5 rounded-lg ${dm ? "hover:bg-gray-800 text-gray-400" : "hover:bg-slate-100 text-gray-500"}`}>
+                <XCircle className="w-4 h-4" />
+              </button>
+            </div>
+            {profileLoading || !profileModal.data ? (
+              <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-amber-500" /></div>
+            ) : (() => {
+              const { profile, portfolio, certificates } = profileModal.data;
+              const req = profileModal.request;
+              return (
+                <div className="p-6 space-y-6">
+                  {/* Basic info */}
+                  <div className="flex items-center gap-4">
+                    {profile.profile_image ? (
+                      <img src={profile.profile_image} alt={profile.name} className="w-16 h-16 rounded-full object-cover" />
+                    ) : (
+                      <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold ${dm ? "bg-gray-700 text-gray-300" : "bg-slate-200 text-gray-600"}`}>
+                        {profile.name?.[0]?.toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <p className={`text-lg font-bold ${text}`}>{profile.name}</p>
+                      <p className={`text-sm ${muted}`}>{profile.email}</p>
+                      {profile.Location && <p className={`text-sm ${muted}`}>{profile.Location}</p>}
+                      {profile.HourlyRate && <p className={`text-sm font-medium text-emerald-500`}>{profile.HourlyRate} ETB/hr</p>}
+                    </div>
+                  </div>
+
+                  {/* About */}
+                  {profile.about && (
+                    <div>
+                      <p className={`text-xs font-semibold uppercase tracking-wider mb-1.5 ${muted}`}>About</p>
+                      <p className={`text-sm ${text}`}>{profile.about}</p>
+                    </div>
+                  )}
+
+                  {/* Skills */}
+                  {profile.skills?.length > 0 && (
+                    <div>
+                      <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${muted}`}>Skills</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {profile.skills.map((s: string) => (
+                          <span key={s} className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${dm ? "bg-blue-900/30 text-blue-300" : "bg-blue-50 text-blue-700"}`}>{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Education & Experience */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {profile.education && (
+                      <div>
+                        <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${muted}`}>Education</p>
+                        <p className={`text-sm ${text}`}>{profile.education}</p>
+                      </div>
+                    )}
+                    {profile.experience && (
+                      <div>
+                        <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${muted}`}>Experience</p>
+                        <p className={`text-sm ${text}`}>{profile.experience}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Links */}
+                  {(profile.linkedin || profile.github || profile.resume_url) && (
+                    <div className="flex flex-wrap gap-3">
+                      {profile.linkedin && <a href={profile.linkedin} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-blue-500 hover:underline"><ExternalLink className="w-3 h-3" /> LinkedIn</a>}
+                      {profile.github && <a href={profile.github} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-blue-500 hover:underline"><ExternalLink className="w-3 h-3" /> GitHub</a>}
+                      {profile.resume_url && <a href={profile.resume_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-blue-500 hover:underline"><ExternalLink className="w-3 h-3" /> Resume</a>}
+                    </div>
+                  )}
+
+                  {/* Portfolio */}
+                  {portfolio?.length > 0 && (
+                    <div>
+                      <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${muted} flex items-center gap-1.5`}><FolderOpen className="w-3.5 h-3.5" /> Portfolio ({portfolio.length})</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {portfolio.map((p: any) => (
+                          <div key={p.id} className={`rounded-lg border p-3 ${dm ? "border-gray-700 bg-gray-800/50" : "border-slate-200 bg-slate-50"}`}>
+                            <p className={`text-sm font-medium ${text}`}>{p.title}</p>
+                            {p.description && <p className={`text-xs mt-0.5 line-clamp-2 ${muted}`}>{p.description}</p>}
+                            {p.technologies?.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1.5">
+                                {p.technologies.map((t: string) => (
+                                  <span key={t} className={`text-[10px] px-1.5 py-0.5 rounded ${dm ? "bg-gray-700 text-gray-300" : "bg-slate-200 text-gray-600"}`}>{t}</span>
+                                ))}
+                              </div>
+                            )}
+                            {(p.project_url || p.github_url) && (
+                              <div className="flex gap-2 mt-1.5">
+                                {p.project_url && <a href={p.project_url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5"><ExternalLink className="w-2.5 h-2.5" /> Live</a>}
+                                {p.github_url && <a href={p.github_url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5"><ExternalLink className="w-2.5 h-2.5" /> GitHub</a>}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Certificates */}
+                  {certificates?.length > 0 && (
+                    <div>
+                      <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${muted} flex items-center gap-1.5`}><Award className="w-3.5 h-3.5" /> Certificates ({certificates.length})</p>
+                      <div className="space-y-2">
+                        {certificates.map((c: any, i: number) => (
+                          <div key={i} className={`flex items-center justify-between rounded-lg border px-3 py-2 ${dm ? "border-gray-700 bg-gray-800/50" : "border-slate-200 bg-slate-50"}`}>
+                            <div>
+                              <p className={`text-sm font-medium ${text}`}>{c.title}</p>
+                              {c.organization && <p className={`text-xs ${muted}`}>{c.organization}</p>}
+                            </div>
+                            {c.credential_url && <a href={c.credential_url} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"><ExternalLink className="w-3 h-3" /></a>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Talent's message */}
+                  {req.message && (
+                    <div className={`rounded-lg p-3 ${dm ? "bg-gray-800" : "bg-slate-50"}`}>
+                      <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${muted}`}>Talent's Message</p>
+                      <p className={`text-sm italic ${text}`}>"{req.message}"</p>
+                    </div>
+                  )}
+
+                  {/* National ID */}
+                  {req.national_id_image && (
+                    <div>
+                      <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${muted}`}>National ID</p>
+                      <a href={req.national_id_image} target="_blank" rel="noreferrer">
+                        <img src={req.national_id_image} alt="National ID" className="w-full max-h-56 object-contain rounded-xl border cursor-pointer hover:opacity-90 transition-opacity" />
+                      </a>
+                      <p className={`text-xs mt-1 ${muted}`}>Click to open full size</p>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex flex-col gap-2 pt-2">
+                    <input
+                      value={adminNote[req.id] || ""}
+                      onChange={(e) => setAdminNote(n => ({ ...n, [req.id]: e.target.value }))}
+                      placeholder="Admin note (optional, sent to talent)"
+                      className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none ${inputCls}`}
+                    />
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => handleVerification(req.id, "reject")}
+                        disabled={actionVerifId === req.id}
+                        className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                      >
+                        {actionVerifId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ThumbsDown className="w-4 h-4" />} Reject
+                      </button>
+                      <button
+                        onClick={() => handleVerification(req.id, "approve")}
+                        disabled={actionVerifId === req.id}
+                        className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                      >
+                        {actionVerifId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ThumbsUp className="w-4 h-4" />} Approve
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className={`w-full max-w-md rounded-2xl border shadow-2xl ${dm ? "bg-gray-900 border-gray-800" : "bg-white border-slate-200"}`}>

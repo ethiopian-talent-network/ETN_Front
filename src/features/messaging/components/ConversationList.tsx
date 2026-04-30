@@ -1,194 +1,147 @@
 import { Search, MessageSquare, UserPlus, RefreshCw } from "lucide-react";
-import type { Conversation } from "../types";
+import type { Conversation } from "../../../api/talent/talentApi";
 
-interface ConversationListProps {
+interface Props {
   conversations: Conversation[];
-  selectedId: string | null;
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  onSelect: (conversation: Conversation) => void;
-  onNewMessage?: () => void;
-  onRefresh?: () => void;
-  loading?: boolean;
-  darkMode?: boolean;
+  activeUserId: number | null;
+  search: string;
+  onSearchChange: (v: string) => void;
+  onSelect: (conv: Conversation) => void;
+  onNewMessage: () => void;
+  onRefresh: () => void;
+  loading: boolean;
+  darkMode: boolean;
 }
 
-export function ConversationList({
-  conversations,
-  selectedId,
-  searchQuery,
-  onSearchChange,
-  onSelect,
-  onNewMessage,
-  onRefresh,
-  loading = false,
-  darkMode = false,
-}: ConversationListProps) {
-  const totalUnread = conversations.reduce((sum, conv) => sum + (conv.unread || 0), 0);
-  
-  const getInitials = (name: string) => 
-    name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+const initials = (name: string) =>
+  name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-    
-    if (minutes < 1) return "now";
-    if (minutes < 60) return `${minutes}m`;
-    if (hours < 24) return `${hours}h`;
-    if (days < 7) return `${days}d`;
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  };
+const formatTime = (d: string) => {
+  const diff = Date.now() - new Date(d).getTime();
+  const m = Math.floor(diff / 60000);
+  const h = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (m < 1) return "now";
+  if (m < 60) return `${m}m`;
+  if (h < 24) return `${h}h`;
+  if (days < 7) return `${days}d`;
+  return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
 
-  const bg = darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200";
-  const text = darkMode ? "text-white" : "text-gray-900";
-  const muted = darkMode ? "text-gray-400" : "text-gray-500";
-  const hoverBg = darkMode ? "hover:bg-gray-700" : "hover:bg-gray-50";
-  const activeBg = darkMode ? "bg-gray-700" : "bg-blue-50";
-  const inputBg = darkMode ? "bg-gray-700 border-gray-600" : "bg-gray-50 border-gray-200";
+export function ConversationList({ conversations, activeUserId, search, onSearchChange, onSelect, onNewMessage, onRefresh, loading, darkMode: dm }: Props) {
+  const totalUnread = conversations.reduce((s, c) => s + (c.unread_count || 0), 0);
 
   return (
-    <div className={`w-80 lg:w-96 border-r ${bg} flex flex-col h-full`}>
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className={`p-4 border-b ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
+      <div className={`px-4 pt-5 pb-4 border-b ${dm ? "border-gray-800" : "border-slate-100"}`}>
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <h2 className={`text-lg font-bold ${text}`}>Messages</h2>
+          <div className="flex items-center gap-2.5">
+            <h2 className={`text-base font-bold ${dm ? "text-white" : "text-gray-900"}`}>Messages</h2>
             {totalUnread > 0 && (
-              <span className="px-2 py-0.5 text-xs font-bold bg-[#0084ca] text-white rounded-full">
+              <span className="min-w-[20px] h-5 px-1.5 text-[11px] font-bold bg-[#0084ca] text-white rounded-full flex items-center justify-center">
                 {totalUnread > 99 ? "99+" : totalUnread}
               </span>
             )}
           </div>
           <div className="flex items-center gap-1">
-            {onNewMessage && (
-              <button
-                onClick={onNewMessage}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0084ca] hover:bg-[#006ba6] text-white text-xs font-medium rounded-lg transition-colors"
-                title="New message"
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                New
-              </button>
-            )}
-            {onRefresh && (
-              <button
-                onClick={onRefresh}
-                className={`p-1.5 rounded-lg transition-colors ${darkMode ? "hover:bg-gray-700 text-gray-400" : "hover:bg-gray-100 text-gray-500"}`}
-                title="Refresh"
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-              </button>
-            )}
+            <button
+              onClick={onNewMessage}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0084ca] hover:bg-[#006ba6] text-white text-xs font-semibold rounded-lg transition-colors"
+            >
+              <UserPlus className="w-3.5 h-3.5" /> New
+            </button>
+            <button
+              onClick={onRefresh}
+              className={`p-1.5 rounded-lg transition-colors ${dm ? "hover:bg-gray-800 text-gray-500" : "hover:bg-slate-100 text-gray-400"}`}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            </button>
           </div>
         </div>
-        
+
         {/* Search */}
-        <div className={`relative flex items-center gap-2 px-3 py-2.5 rounded-xl border ${inputBg}`}>
-          <Search className={`w-4 h-4 ${muted}`} />
+        <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border ${dm ? "bg-gray-800 border-gray-700" : "bg-slate-50 border-slate-200"}`}>
+          <Search className={`w-3.5 h-3.5 flex-shrink-0 ${dm ? "text-gray-500" : "text-gray-400"}`} />
           <input
             type="text"
-            value={searchQuery}
+            value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search conversations..."
-            className={`flex-1 bg-transparent outline-none text-sm ${darkMode ? "text-white placeholder-gray-500" : "text-gray-900 placeholder-gray-400"}`}
+            className={`flex-1 bg-transparent outline-none text-sm ${dm ? "text-white placeholder-gray-600" : "text-gray-900 placeholder-gray-400"}`}
           />
         </div>
       </div>
 
-      {/* Conversations List */}
+      {/* List */}
       <div className="flex-1 overflow-y-auto">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <RefreshCw className="w-6 h-6 animate-spin text-[#0084ca]" />
+          <div className="flex items-center justify-center py-16">
+            <div className="w-6 h-6 rounded-full border-2 border-[#0084ca]/20 border-t-[#0084ca] animate-spin" />
           </div>
         ) : conversations.length === 0 ? (
-          <div className={`text-center py-16 px-4 ${muted}`}>
-            <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-25" />
-            <p className="text-sm font-medium mb-1">No conversations yet</p>
-            <p className="text-xs mb-4">Start a conversation with your connections</p>
-            {onNewMessage && (
-              <button
-                onClick={onNewMessage}
-                className="flex items-center gap-1.5 px-4 py-2 bg-[#0084ca] hover:bg-[#006ba6] text-white text-xs font-medium rounded-lg transition-colors mx-auto"
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                New Message
-              </button>
-            )}
+          <div className={`flex flex-col items-center justify-center py-16 px-6 text-center ${dm ? "text-gray-500" : "text-gray-400"}`}>
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${dm ? "bg-gray-800" : "bg-slate-100"}`}>
+              <MessageSquare className="w-7 h-7 opacity-40" />
+            </div>
+            <p className={`text-sm font-semibold mb-1 ${dm ? "text-gray-300" : "text-gray-600"}`}>No conversations yet</p>
+            <p className="text-xs mb-5">Start chatting with your connections</p>
+            <button
+              onClick={onNewMessage}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#0084ca] hover:bg-[#006ba6] text-white text-xs font-semibold rounded-lg transition-colors"
+            >
+              <UserPlus className="w-3.5 h-3.5" /> New Message
+            </button>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100 dark:divide-gray-700">
-            {conversations.map((conversation) => {
-              const otherUser = conversation.participants?.find(p => p.id !== "me");
-              const isSelected = selectedId === conversation.id;
-              
-              return (
-                <button
-                  key={conversation.id}
-                  onClick={() => onSelect(conversation)}
-                  className={`w-full p-4 transition-colors text-left group ${
-                    isSelected ? activeBg : hoverBg
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {/* Avatar */}
-                    <div className="relative flex-shrink-0">
-                      {otherUser?.avatar ? (
-                        <img
-                          src={otherUser.avatar}
-                          alt={otherUser.name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#0084ca] to-purple-600 flex items-center justify-center text-white text-sm font-bold">
-                          {getInitials(otherUser?.name || "Unknown")}
-                        </div>
-                      )}
-                      {otherUser?.online && (
-                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-                      )}
-                      {conversation.unread && conversation.unread > 0 && (
-                        <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#0084ca] text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
-                          {conversation.unread > 9 ? "9+" : conversation.unread}
-                        </div>
-                      )}
+          conversations.map((conv) => {
+            const isActive = activeUserId === conv.user_id;
+            const hasUnread = conv.unread_count > 0;
+            return (
+              <button
+                key={conv.user_id}
+                onClick={() => onSelect(conv)}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 transition-all text-left border-b ${
+                  dm ? "border-gray-800/60" : "border-slate-50"
+                } ${
+                  isActive
+                    ? dm ? "bg-[#0084ca]/10 border-l-2 border-l-[#0084ca]" : "bg-[#0084ca]/8 border-l-2 border-l-[#0084ca]"
+                    : dm ? "hover:bg-gray-800/60" : "hover:bg-slate-50"
+                }`}
+              >
+                {/* Avatar */}
+                <div className="relative flex-shrink-0">
+                  {conv.profile_image ? (
+                    <img src={conv.profile_image} alt={conv.name} className="w-11 h-11 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#0084ca] to-violet-500 flex items-center justify-center text-white text-sm font-bold">
+                      {initials(conv.name)}
                     </div>
+                  )}
+                  {hasUnread && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-[#0084ca] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {conv.unread_count > 9 ? "9+" : conv.unread_count}
+                    </span>
+                  )}
+                </div>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className={`font-semibold truncate ${text} group-hover:text-[#0084ca] transition-colors`}>
-                          {otherUser?.name || "Unknown User"}
-                        </h3>
-                        <span className={`text-xs ${muted} flex-shrink-0 ml-2`}>
-                          {formatTime(conversation.timestamp || conversation.lastMessage?.createdAt || "")}
-                        </span>
-                      </div>
-                      
-                      {otherUser?.role && (
-                        <p className={`text-xs ${muted} mb-1 truncate`}>
-                          {otherUser.role}
-                        </p>
-                      )}
-                      
-                      <p className={`text-sm truncate ${
-                        conversation.unread && conversation.unread > 0
-                          ? darkMode ? "text-gray-200 font-medium" : "text-gray-700 font-medium"
-                          : muted
-                      }`}>
-                        {conversation.lastMessage?.text || "No messages yet"}
-                      </p>
-                    </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <p className={`text-sm font-semibold truncate ${isActive ? "text-[#0084ca]" : dm ? "text-white" : "text-gray-900"}`}>
+                      {conv.name}
+                    </p>
+                    <span className={`text-[11px] flex-shrink-0 ml-2 ${dm ? "text-gray-600" : "text-gray-400"}`}>
+                      {formatTime(conv.last_message_at)}
+                    </span>
                   </div>
-                </button>
-              );
-            })}
-          </div>
+                  <p className={`text-xs truncate ${hasUnread ? (dm ? "text-gray-200 font-medium" : "text-gray-700 font-medium") : dm ? "text-gray-500" : "text-gray-400"}`}>
+                    {conv.last_message || "No messages yet"}
+                  </p>
+                </div>
+              </button>
+            );
+          })
         )}
       </div>
     </div>

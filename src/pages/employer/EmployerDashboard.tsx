@@ -6,6 +6,7 @@ import { useJobs } from "../../features/employer/hooks/useJobs";
 import { useProposals } from "../../features/employer/hooks/useProposals";
 import { useCategories } from "../../features/employer/hooks/useCategories";
 import { useTalents } from "../../features/employer/hooks/useTalents";
+import { useContracts } from "../../features/employer/hooks/useContracts";
 import { StatsCards } from "../../features/employer/components/StatsCards";
 import { TabsNavigation } from "../../features/employer/components/TabsNavigation";
 import { JobList } from "../../features/employer/components/JobList";
@@ -16,22 +17,7 @@ import { TalentProfileModal } from "../../features/employer/components/TalentPro
 import { TalentList } from "../../features/employer/components/TalentList";
 import { ContractList } from "../../features/employer/components/ContractList";
 import { Header } from "../../features/employer/components/Header";
-import type { TabType, EmployerStats, Job, Talent, Contract } from "../../features/employer/types/employer.types";
-
-const mockContracts: Contract[] = [
-  {
-    id: 1, job_id: 1, talent_id: 1, talent_name: "John Doe",
-    job_title: "Senior React Developer", status: "active",
-    start_date: "2024-01-01", end_date: "2024-03-01",
-    total_value: 15000, earnings: 7500, progress: 50, created_at: "2024-01-01",
-  },
-  {
-    id: 2, job_id: 2, talent_id: 2, talent_name: "Jane Smith",
-    job_title: "Full Stack Developer", status: "completed",
-    start_date: "2023-10-01", end_date: "2023-12-01",
-    total_value: 12000, earnings: 12000, progress: 100, created_at: "2023-10-01",
-  },
-];
+import type { TabType, EmployerStats, Job } from "../../features/employer/types/employer.types";
 
 export const EmployerDashboard: React.FC = () => {
   const { darkMode } = useDarkMode();
@@ -49,23 +35,25 @@ export const EmployerDashboard: React.FC = () => {
   const { proposals, loading: proposalsLoading, error: proposalsError, fetchProposals, updateProposalStatus, clearProposals } = useProposals();
   const { categories } = useCategories();
   const { talents, loading: talentsLoading, error: talentsError, getTalents } = useTalents();
+  const { contracts, loading: contractsLoading, error: contractsError, getContracts } = useContracts();
 
   const stats: EmployerStats = {
     totalJobs: jobs.length,
     activeJobs: jobs.filter((j) => j.status === "active").length,
     totalProposals: jobs.reduce((s, j) => s + (j.applications_count || 0), 0),
-    activeContracts: mockContracts.filter((c) => c.status === "active").length,
+    activeContracts: contracts.filter((c) => c.status === "active").length,
   };
 
   const tabCounts = {
     jobs: jobs.length,
     proposals: stats.totalProposals,
     talents: talents.length,
-    contracts: mockContracts.length,
+    contracts: contracts.length,
   };
 
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
   useEffect(() => { if (activeTab === "talents") getTalents(); }, [activeTab, getTalents]);
+  useEffect(() => { if (activeTab === "contracts") getContracts(); }, [activeTab, getContracts]);
 
   const handleViewProposals = (job: Job) =>
     navigate(EMPLOYER_ROUTES.PROPOSALS.path.replace(":jobId", job.id.toString()));
@@ -105,7 +93,7 @@ export const EmployerDashboard: React.FC = () => {
           />
         );
       case "contracts":
-        return <ContractList contracts={mockContracts} darkMode={dm} onViewDetails={() => {}} />;
+        return <ContractList contracts={contracts} loading={contractsLoading} error={contractsError} darkMode={dm} onViewDetails={() => {}} />;
       default:
         return null;
     }

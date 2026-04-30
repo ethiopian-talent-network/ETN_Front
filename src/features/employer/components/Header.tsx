@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Plus, Bell, Moon, Sun, LogOut, Building2, User, ChevronDown, MessageCircle } from "lucide-react";
+import { Plus, Bell, Moon, Sun, LogOut, Building2, User, ChevronDown } from "lucide-react";
 import { useDarkMode } from "../../../contexts/DarkModeContext";
 import { useAuth } from "../../../contexts/AuthContext";
 import { EMPLOYER_ROUTES } from "../../../config/routes";
@@ -73,16 +73,6 @@ export const Header: React.FC = () => {
 
           {/* Right actions */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate("/messages")}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                dm ? "text-gray-300 hover:bg-gray-800 hover:text-white" : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-              }`}
-            >
-              <MessageCircle className="w-5 h-5" />
-              <span className="hidden sm:inline">Messages</span>
-            </button>
-
             <button
               onClick={() => navigate(EMPLOYER_ROUTES.POST_JOB.path)}
               className="flex items-center gap-2 px-4 py-2 bg-[#0084ca] hover:bg-[#006ba6] text-white text-sm font-semibold rounded-lg transition-colors"

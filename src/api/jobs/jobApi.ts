@@ -2,7 +2,7 @@ import type { Job } from "../../features/talents/types";
 import { API_BASE_URL, validateApiConfig } from "../../config/api";
 
 // Helper function to get auth headers
-const getAuthHeaders = () => {
+const getAuthHeaders = (): Record<string, string> => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
@@ -92,7 +92,8 @@ export const getJobById = async (id: number): Promise<Job> => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    return normalizeJob(data);
   } catch (error) {
     console.error("Error fetching job:", error);
     throw error;
@@ -135,8 +136,51 @@ export const getJobsByCategory = async (
   }
 };
 
+// Normalize a raw API job object to match the Job type
+const normalizeJob = (job: any): Job => ({
+  ...job,
+  skills: Array.isArray(job.skills) ? job.skills.filter(Boolean) : [],
+  applicants: parseInt(job.applicants) || 0,
+  company: job.company || job.company_name || "Unknown Company",
+  category: job.category || job.category_name || "",
+  budget: job.budget || (job.budget_type === "fixed" ? `$${job.salary}` : `$${job.salary}/hour`),
+  duration: job.duration || "Project-based",
+  location: job.location || job.companyLocation || "Remote",
+  remote: job.remote ?? true,
+  posted: job.posted || job.created_at || "",
+  match: job.match || Math.floor(Math.random() * 30) + 70,
+  status: job.status === "active" ? "new" : (job.status || "new"),
+});
+
+// Fetch skills for a single job by id
+const fetchJobSkills = async (jobId: number): Promise<string[]> => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data.skills) ? data.skills : [];
+  } catch {
+    return [];
+  }
+};
+
+// Enrich jobs that have empty skills by fetching individual job details
+const enrichJobsWithSkills = async (jobs: Job[]): Promise<Job[]> => {
+  return Promise.all(
+    jobs.map(async (job) => {
+      if (!job.skills || job.skills.length === 0) {
+        const skills = await fetchJobSkills(job.id);
+        return { ...job, skills };
+      }
+      return job;
+    })
+  );
+};
+
 // Get recent jobs
-export const getRecentJobs = async (limit: number = 10): Promise<Job[]> => {
+export const getRecentJobs = async (limit: number = 20): Promise<Job[]> => {
   try {
     const response = await fetch(
       `${API_BASE_URL}/api/jobs/recent?limit=${limit}`,
@@ -144,7 +188,7 @@ export const getRecentJobs = async (limit: number = 10): Promise<Job[]> => {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          // 'Authorization': `Bearer ${token}`
+          ...getAuthHeaders(),
         },
       },
     );
@@ -153,7 +197,9 @@ export const getRecentJobs = async (limit: number = 10): Promise<Job[]> => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    const jobs = Array.isArray(data) ? data.map(normalizeJob) : [];
+    return enrichJobsWithSkills(jobs);
   } catch (error) {
     console.error("Error fetching recent jobs:", error);
     throw error;
@@ -165,17 +211,12 @@ export const getSavedJobs = async (): Promise<Job[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/jobs/saved/my`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        ...getAuthHeaders(),
-      },
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    const jobs = Array.isArray(data) ? data.map(normalizeJob) : [];
+    return enrichJobsWithSkills(jobs);
   } catch (error) {
     console.error("Error fetching saved jobs:", error);
     throw error;
@@ -187,17 +228,12 @@ export const getAppliedJobs = async (): Promise<Job[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/jobs/applied/my`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        ...getAuthHeaders(),
-      },
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    const jobs = Array.isArray(data) ? data.map(normalizeJob) : [];
+    return enrichJobsWithSkills(jobs);
   } catch (error) {
     console.error("Error fetching applied jobs:", error);
     throw error;

@@ -94,7 +94,7 @@ export function JobModal({
             <div>
               <h3 className={`font-semibold mb-2 ${darkMode ? "text-white" : "text-gray-900"}`}>Required Skills</h3>
               <div className="flex flex-wrap gap-2">
-                {job.skills.map((skill, index) => (
+                {(job.skills ?? []).map((skill, index) => (
                   <span
                     key={index}
                     className={`px-3 py-1 text-sm rounded-full ${

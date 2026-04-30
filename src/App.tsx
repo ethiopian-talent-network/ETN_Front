@@ -6,7 +6,6 @@ import OtpVerification from "./pages/otp-verification";
 import EmployerDashboard from "./pages/employer/EmployerDashboard";
 import EmployerProfilePage from "./pages/employer/EmployerProfile";
 import FreelancerDashboard from "./features/talents/FreelancerDashboard";
-import TalentsDashboard from "./features/talents/TalentsDashboard";
 import TalentNetwork from "./features/talents/TalentNetwork";
 import TalentDiscovery from "./features/talents/TalentDiscovery";
 import MessagingPage from "./features/messaging/MessagingPage";
@@ -22,6 +21,7 @@ import AllProposalsPage from "./features/employer/components/ProposalsPage";
 import EscrowPaymentPage from "./pages/employer/EscrowPaymentPage";
 import Portfolio from "./pages/Portfolio";
 import NotificationsPage from "./pages/NotificationsPage";
+import VerifyIdentity from "./pages/VerifyIdentity";
 import OwnerDashboard from "./pages/owner/OwnerDashboard";
 import InternalLogin from "./pages/admin/InternalLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -159,12 +159,20 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path={TALENT_ROUTES.VERIFY_IDENTITY.path}
+                element={
+                  <ProtectedRoute allowedRoles={["talent"]}>
+                    <VerifyIdentity />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Shared routes - Both talent and employer */}
               <Route
                 path={SHARED_ROUTES.MESSAGES.path}
                 element={
-                  <ProtectedRoute allowedRoles={["talent", "employer"]}>
+                  <ProtectedRoute allowedRoles={["talent"]}>
                     <MessagingPage />
                   </ProtectedRoute>
                 }

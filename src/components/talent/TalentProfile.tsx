@@ -2,12 +2,12 @@ import React, { useState, useEffect } from "react";
 import {
   GraduationCap, Briefcase, Globe, FileText, Plus, Loader,
   CheckCircle, AlertCircle, ArrowRight, FolderOpen, GitBranch,
-  Link2, X, Coins, ExternalLink,
+  Link2, X, Coins, ExternalLink, ShieldCheck, ShieldAlert, Clock, Upload,
 } from "lucide-react";
 import { TALENT_ROUTES } from "../../config/routes";
 import {
   getTalentProfile, updateTalentProfile, addSkills, getTokenBalance,
-  uploadProfileImage,
+  uploadProfileImage, getVerificationStatus, requestVerification,
   type TalentProfile as TalentProfileType,
   type UpdateProfileData,
 } from "../../api/talent/talentApi";
@@ -36,6 +36,13 @@ export const TalentProfile: React.FC<TalentProfileProps> = ({ darkMode = false }
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [isIncomplete, setIsIncomplete] = useState(false);
 
+  // Verification state
+  const [verifStatus, setVerifStatus] = useState<{ is_verified: boolean; request: any } | null>(null);
+  const [verifModal, setVerifModal] = useState(false);
+  const [nationalIdFile, setNationalIdFile] = useState<File | null>(null);
+  const [verifMessage, setVerifMessage] = useState("");
+  const [verifLoading, setVerifLoading] = useState(false);
+
   const dm = darkMode;
 
   useEffect(() => { fetchProfileData(); }, []);
@@ -44,10 +51,13 @@ export const TalentProfile: React.FC<TalentProfileProps> = ({ darkMode = false }
     setLoading(true);
     setError(null);
     try {
-      const [profileResponse, tokenResponse] = await Promise.all([
+      const [profileResponse, tokenResponse, verifResponse] = await Promise.all([
         getTalentProfile(),
         getTokenBalance(),
+        getVerificationStatus().catch(() => null),
       ]);
+
+      if (verifResponse) setVerifStatus(verifResponse);
 
       if (profileResponse.incomplete) {
         setIsIncomplete(true);
@@ -141,6 +151,25 @@ export const TalentProfile: React.FC<TalentProfileProps> = ({ darkMode = false }
       setError(err.message || "Failed to add skill");
     } finally {
       setAddingSkill(false);
+    }
+  };
+
+  const handleSubmitVerification = async () => {
+    if (!nationalIdFile) return;
+    setVerifLoading(true);
+    try {
+      await requestVerification(nationalIdFile, verifMessage);
+      setVerifModal(false);
+      setNationalIdFile(null);
+      setVerifMessage("");
+      const updated = await getVerificationStatus();
+      setVerifStatus(updated);
+      setSuccess("Verification request submitted! The admin will review it shortly.");
+      setTimeout(() => setSuccess(null), 4000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setVerifLoading(false);
     }
   };
 
@@ -323,6 +352,74 @@ export const TalentProfile: React.FC<TalentProfileProps> = ({ darkMode = false }
           Top up <ArrowRight className="w-3 h-3" />
         </button>
       </div>
+
+      {/* Verification Status Card */}
+      {verifStatus && !verifStatus.is_verified && (
+        <div className={`flex items-center gap-4 px-5 py-4 rounded-xl border ${
+          verifStatus.request?.status === "pending"
+            ? dm ? "bg-amber-900/20 border-amber-700" : "bg-amber-50 border-amber-200"
+            : verifStatus.request?.status === "rejected"
+            ? dm ? "bg-red-900/20 border-red-700" : "bg-red-50 border-red-200"
+            : dm ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+        }`}>
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+            verifStatus.request?.status === "pending" ? "bg-amber-100" :
+            verifStatus.request?.status === "rejected" ? "bg-red-100" : "bg-gray-100"
+          }`}>
+            {verifStatus.request?.status === "pending"
+              ? <Clock className="w-5 h-5 text-amber-600" />
+              : verifStatus.request?.status === "rejected"
+              ? <ShieldAlert className="w-5 h-5 text-red-500" />
+              : <ShieldAlert className="w-5 h-5 text-gray-400" />}
+          </div>
+          <div className="flex-1">
+            <p className={`text-xs font-semibold uppercase tracking-wider ${
+              verifStatus.request?.status === "pending" ? dm ? "text-amber-400" : "text-amber-700" :
+              verifStatus.request?.status === "rejected" ? "text-red-500" :
+              dm ? "text-gray-400" : "text-gray-500"
+            }`}>
+              {verifStatus.request?.status === "pending" ? "Verification Pending" :
+               verifStatus.request?.status === "rejected" ? "Verification Rejected" :
+               "Account Not Verified"}
+            </p>
+            <p className={`text-sm mt-0.5 ${
+              verifStatus.request?.status === "pending" ? dm ? "text-amber-300" : "text-amber-800" :
+              verifStatus.request?.status === "rejected" ? dm ? "text-red-300" : "text-red-700" :
+              dm ? "text-gray-300" : "text-gray-600"
+            }`}>
+              {verifStatus.request?.status === "pending"
+                ? "Your request is under review. You'll be notified once approved."
+                : verifStatus.request?.status === "rejected"
+                ? verifStatus.request.admin_note || "Your request was rejected. You may resubmit."
+                : "Get verified to apply for jobs. Upload your Ethiopian National ID."}
+            </p>
+          </div>
+          {verifStatus.request?.status !== "pending" && (
+            <button
+              onClick={() => setVerifModal(true)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors ${
+                verifStatus.request?.status === "rejected"
+                  ? "bg-red-500 hover:bg-red-600 text-white"
+                  : "bg-[#0084ca] hover:bg-[#006ba6] text-white"
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              {verifStatus.request?.status === "rejected" ? "Resubmit" : "Get Verified"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {verifStatus?.is_verified && (
+        <div className={`flex items-center gap-3 px-5 py-3 rounded-xl border ${
+          dm ? "bg-emerald-900/20 border-emerald-700" : "bg-emerald-50 border-emerald-200"
+        }`}>
+          <ShieldCheck className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+          <p className={`text-sm font-medium ${dm ? "text-emerald-300" : "text-emerald-700"}`}>
+            Your account is verified — you can apply for jobs.
+          </p>
+        </div>
+      )}
 
       {/* Two-column grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -513,6 +610,88 @@ export const TalentProfile: React.FC<TalentProfileProps> = ({ darkMode = false }
           </button>
         </div>
       </div>
+
+      {/* Verification Modal */}
+      {verifModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => !verifLoading && setVerifModal(false)}>
+          <div className={`w-full max-w-md rounded-2xl border shadow-2xl ${dm ? "bg-gray-900 border-gray-800" : "bg-white border-slate-200"}`} onClick={e => e.stopPropagation()}>
+            <div className={`px-6 py-4 border-b flex items-center justify-between ${dm ? "border-gray-800" : "border-slate-200"}`}>
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-[#0084ca]" />
+                <h2 className={`font-semibold ${dm ? "text-white" : "text-gray-900"}`}>Identity Verification</h2>
+              </div>
+              <button onClick={() => !verifLoading && setVerifModal(false)} className={`p-1.5 rounded-lg ${dm ? "hover:bg-gray-800 text-gray-400" : "hover:bg-slate-100 text-gray-500"}`}>
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className={`p-3 rounded-xl text-sm ${dm ? "bg-blue-900/20 text-blue-300" : "bg-blue-50 text-blue-700"}`}>
+                Upload a clear photo of your <strong>Ethiopian National ID</strong> (Fayda ID or old ID card). Your ID will only be used for identity verification.
+              </div>
+
+              {/* National ID upload */}
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${dm ? "text-gray-300" : "text-gray-700"}`}>
+                  National ID Photo <span className="text-red-500">*</span>
+                </label>
+                <label className={`flex flex-col items-center justify-center gap-2 w-full h-36 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
+                  nationalIdFile
+                    ? dm ? "border-emerald-600 bg-emerald-900/20" : "border-emerald-400 bg-emerald-50"
+                    : dm ? "border-gray-600 hover:border-gray-500 bg-gray-800" : "border-gray-300 hover:border-[#0084ca] bg-gray-50"
+                }`}>
+                  <input type="file" accept="image/*" className="hidden" onChange={e => setNationalIdFile(e.target.files?.[0] || null)} />
+                  {nationalIdFile ? (
+                    <>
+                      <CheckCircle className="w-8 h-8 text-emerald-500" />
+                      <p className={`text-sm font-medium ${dm ? "text-emerald-300" : "text-emerald-700"}`}>{nationalIdFile.name}</p>
+                      <p className={`text-xs ${dm ? "text-gray-400" : "text-gray-500"}`}>Click to change</p>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className={`w-8 h-8 ${dm ? "text-gray-500" : "text-gray-400"}`} />
+                      <p className={`text-sm ${dm ? "text-gray-400" : "text-gray-500"}`}>Click to upload your National ID</p>
+                      <p className={`text-xs ${dm ? "text-gray-500" : "text-gray-400"}`}>JPG, PNG or PDF</p>
+                    </>
+                  )}
+                </label>
+              </div>
+
+              {/* Optional message */}
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${dm ? "text-gray-300" : "text-gray-700"}`}>Message to Admin <span className={`text-xs font-normal ${dm ? "text-gray-500" : "text-gray-400"}`}>(optional)</span></label>
+                <textarea
+                  value={verifMessage}
+                  onChange={e => setVerifMessage(e.target.value)}
+                  rows={3}
+                  placeholder="Any additional information for the admin..."
+                  className={`w-full px-3 py-2.5 rounded-lg border text-sm outline-none resize-none transition-all focus:ring-2 focus:ring-[#0084ca]/30 focus:border-[#0084ca] ${
+                    dm ? "bg-gray-700 border-gray-600 text-white placeholder-gray-500" : "bg-white border-gray-200 text-gray-900 placeholder-gray-400"
+                  }`}
+                />
+              </div>
+
+              {error && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button onClick={() => !verifLoading && setVerifModal(false)}
+                  className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${dm ? "border-gray-700 text-gray-300 hover:bg-gray-800" : "border-slate-300 text-gray-600 hover:bg-slate-50"}`}>
+                  Cancel
+                </button>
+                <button onClick={handleSubmitVerification} disabled={!nationalIdFile || verifLoading}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#0084ca] hover:bg-[#006ba6] text-white text-sm font-semibold transition-colors disabled:opacity-50">
+                  {verifLoading ? <><Loader className="w-4 h-4 animate-spin" /> Submitting...</> : <><ShieldCheck className="w-4 h-4" /> Submit Request</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

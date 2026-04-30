@@ -131,6 +131,12 @@ export const TALENT_ROUTES: Record<string, RouteConfig> = {
     roles: [RouteRole.TALENT],
     description: "View all notifications",
   },
+  VERIFY_IDENTITY: {
+    path: "/verify-identity",
+    title: "Verify Identity",
+    roles: [RouteRole.TALENT],
+    description: "Submit National ID for admin verification",
+  },
 };
 
 /**

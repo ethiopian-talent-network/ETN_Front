@@ -274,6 +274,26 @@ export const deleteJob = async (token: string, jobId: number) => {
   return await response.json();
 };
 
+// API function for fetching contracts
+export const fetchContracts = async (token: string, status?: string) => {
+  const params = new URLSearchParams();
+  if (status && status !== "all") params.append("status", status);
+  const response = await fetch(`${API_BASE_URL}/api/contracts?${params}`, {
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+  });
+  if (!response.ok) throw new Error("Failed to fetch contracts");
+  return response.json();
+};
+
+// API function for fetching milestones for a contract
+export const fetchMilestones = async (token: string, contractId: number) => {
+  const response = await fetch(`${API_BASE_URL}/api/contracts/${contractId}/milestones`, {
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+  });
+  if (!response.ok) throw new Error("Failed to fetch milestones");
+  return response.json();
+};
+
 // API function for fetching all talents
 export const fetchTalents = async (
   token: string,

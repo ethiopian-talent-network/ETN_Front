@@ -436,6 +436,7 @@ export const uploadProfileImage = async (
 
 export interface Connection {
   id: number;
+  user_id?: number;
   sender_id?: number;
   talent_id?: number;
   name: string;
@@ -496,6 +497,16 @@ export const getMyConnections = async (): Promise<{
     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
   });
   if (!response.ok) throw new Error("Failed to fetch connections");
+  return response.json();
+};
+
+export const getConnectionStatuses = async (): Promise<{
+  statuses: Record<number, { status: "pending" | "accepted" | "rejected"; direction: "sent" | "received"; connection_id: number }>;
+}> => {
+  const response = await fetch(`${API_BASE_URL}/api/talents/connection-statuses`, {
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+  });
+  if (!response.ok) throw new Error("Failed to fetch connection statuses");
   return response.json();
 };
 
@@ -636,6 +647,31 @@ export const getAllTalents = async (options?: {
     })),
     pagination: data.pagination || {},
   };
+};
+
+export const getVerificationStatus = async (): Promise<{
+  is_verified: boolean;
+  request: { id: number; status: string; admin_note?: string; created_at: string } | null;
+}> => {
+  const response = await fetch(`${API_BASE_URL}/api/talents/verification-status`, {
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+  });
+  if (!response.ok) throw new Error("Failed to fetch verification status");
+  return response.json();
+};
+
+export const requestVerification = async (nationalIdFile: File, message?: string): Promise<{ message: string }> => {
+  const formData = new FormData();
+  formData.append("national_id", nationalIdFile);
+  if (message) formData.append("message", message);
+  const response = await fetch(`${API_BASE_URL}/api/talents/request-verification`, {
+    method: "POST",
+    headers: { ...getAuthHeaders() },
+    body: formData,
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || "Failed to submit verification request");
+  return data;
 };
 
 // ── Notifications ─────────────────────────────────────────────────────────────
