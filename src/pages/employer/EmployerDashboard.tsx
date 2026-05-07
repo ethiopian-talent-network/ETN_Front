@@ -114,8 +114,8 @@ export const EmployerDashboard: React.FC = () => {
 
         <StatsCards stats={stats} darkMode={dm} />
 
-        {/* Tabs + content */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        {/* Tabs */}
+        <div className="overflow-x-auto mb-6">
           <TabsNavigation activeTab={activeTab} setActiveTab={setActiveTab} darkMode={dm} counts={tabCounts} />
         </div>
 

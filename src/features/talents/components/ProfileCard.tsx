@@ -159,44 +159,46 @@ export function ProfileCard({ darkMode: dm }: ProfileCardProps) {
           />
         </div>
         <p className={`text-xs mt-1.5 ${dm ? "text-gray-500" : "text-gray-400"}`}>
-          {doneCount} of {total} steps completed
+          {pct === 100 ? "Profile completed! 🎉" : `${doneCount} of ${total} steps completed`}
         </p>
       </div>
 
-      {/* Checklist */}
-      <div className={`px-5 pb-5 space-y-1`}>
-        {checklist.map(({ label, done, to }) => (
-          <Link
-            key={label}
-            to={to}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors group ${
-              done
-                ? dm ? "opacity-60 hover:opacity-80" : "opacity-60 hover:opacity-80"
-                : dm ? "hover:bg-gray-700" : "hover:bg-slate-50"
-            }`}
-          >
-            {done ? (
-              <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-            ) : label === "Get identity verified" && verifPending ? (
-              <ShieldCheck className="w-4 h-4 text-amber-400 flex-shrink-0" />
-            ) : (
-              <Circle className={`w-4 h-4 flex-shrink-0 ${dm ? "text-gray-600" : "text-gray-300"}`} />
-            )}
-            <span className={`text-xs flex-1 font-medium ${
-              done
-                ? dm ? "text-gray-400 line-through" : "text-gray-400 line-through"
-                : label === "Get identity verified" && verifPending
-                ? "text-amber-400"
-                : dm ? "text-gray-200" : "text-gray-700"
-            }`}>
-              {label}{label === "Get identity verified" && verifPending ? " (pending review)" : ""}
-            </span>
-            {!done && (
-              <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ${dm ? "text-gray-400" : "text-gray-400"}`} />
-            )}
-          </Link>
-        ))}
-      </div>
+      {/* Checklist - Only show if not 100% complete */}
+      {pct < 100 && (
+        <div className={`px-5 pb-5 space-y-1`}>
+          {checklist.map(({ label, done, to }) => (
+            <Link
+              key={label}
+              to={to}
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors group ${
+                done
+                  ? dm ? "opacity-60 hover:opacity-80" : "opacity-60 hover:opacity-80"
+                  : dm ? "hover:bg-gray-700" : "hover:bg-slate-50"
+              }`}
+            >
+              {done ? (
+                <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+              ) : label === "Get identity verified" && verifPending ? (
+                <ShieldCheck className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              ) : (
+                <Circle className={`w-4 h-4 flex-shrink-0 ${dm ? "text-gray-600" : "text-gray-300"}`} />
+              )}
+              <span className={`text-xs flex-1 font-medium ${
+                done
+                  ? dm ? "text-gray-400 line-through" : "text-gray-400 line-through"
+                  : label === "Get identity verified" && verifPending
+                  ? "text-amber-400"
+                  : dm ? "text-gray-200" : "text-gray-700"
+              }`}>
+                {label}{label === "Get identity verified" && verifPending ? " (pending review)" : ""}
+              </span>
+              {!done && (
+                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ${dm ? "text-gray-400" : "text-gray-400"}`} />
+              )}
+            </Link>
+          ))}
+        </div>
+      )}
 
     </div>
   );

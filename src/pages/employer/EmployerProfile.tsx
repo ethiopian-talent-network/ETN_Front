@@ -5,10 +5,24 @@ import { Header } from "../../features/employer/components/Header";
 import {
   Building2, MapPin, Globe, User, Mail, Edit3,
   Save, X, CheckCircle, AlertCircle, Loader2, Camera,
-  Briefcase, Link as LinkIcon,
+  Briefcase, Link as LinkIcon, ShieldCheck, Upload, BadgeCheck, Clock, ShieldAlert,
 } from "lucide-react";
 import { API_BASE_URL } from "../../config/api";
 import { LocationSelector } from "../../components/profile/LocationSelector";
+
+interface LicenseStatus {
+  is_verified: boolean;
+  license: {
+    id: number;
+    license_name: string;
+    license_number?: string;
+    issuing_authority?: string;
+    license_image: string;
+    status: "pending" | "approved" | "rejected";
+    admin_note?: string;
+    submitted_at: string;
+  } | null;
+}
 
 interface EmployerProfileData {
   name: string;
@@ -41,6 +55,15 @@ export default function EmployerProfilePage() {
   const [incomplete, setIncomplete] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
 
+  // License state
+  const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
+  const [licenseModal, setLicenseModal] = useState(false);
+  const [licenseFile, setLicenseFile] = useState<File | null>(null);
+  const [licensePreview, setLicensePreview] = useState<string | null>(null);
+  const [licenseForm, setLicenseForm] = useState({ license_name: "", license_number: "", issuing_authority: "" });
+  const [licenseSubmitting, setLicenseSubmitting] = useState(false);
+  const licenseFileRef = useRef<HTMLInputElement>(null);
+
   const [form, setForm] = useState({
     company_name: "",
     company_discription: "",
@@ -49,7 +72,57 @@ export default function EmployerProfilePage() {
     username: "",
   });
 
-  useEffect(() => { fetchProfile(); }, []);
+  useEffect(() => { fetchProfile(); fetchLicenseStatus(); }, []);
+
+  const fetchLicenseStatus = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/employer/license`, {
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      });
+      const data = await res.json();
+      setLicenseStatus(data);
+    } catch {}
+  };
+
+  const handleLicenseFileChange = (file: File | null) => {
+    setLicenseFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => setLicensePreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    } else setLicensePreview(null);
+  };
+
+  const handleLicenseSubmit = async () => {
+    if (!licenseFile || !licenseForm.license_name.trim()) {
+      showToast("License name and image are required", "error"); return;
+    }
+    setLicenseSubmitting(true);
+    try {
+      const fd = new FormData();
+      fd.append("license_image", licenseFile);
+      fd.append("license_name", licenseForm.license_name);
+      if (licenseForm.license_number) fd.append("license_number", licenseForm.license_number);
+      if (licenseForm.issuing_authority) fd.append("issuing_authority", licenseForm.issuing_authority);
+      const res = await fetch(`${API_BASE_URL}/api/employer/license`, {
+        method: "POST",
+        headers: { ...getAuthHeaders() },
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      showToast(data.message, "success");
+      setLicenseModal(false);
+      setLicenseFile(null);
+      setLicensePreview(null);
+      setLicenseForm({ license_name: "", license_number: "", issuing_authority: "" });
+      fetchLicenseStatus();
+    } catch (err: any) {
+      showToast(err.message, "error");
+    } finally {
+      setLicenseSubmitting(false);
+    }
+  };
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -440,7 +513,144 @@ export default function EmployerProfilePage() {
             </div>
           </div>
         )}
+
+        {/* ── License Verification Card ── */}
+        {!editing && (
+          <div className={`mt-4 ${card} border rounded-xl p-5`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`text-sm font-semibold flex items-center gap-2 ${text}`}>
+                <ShieldCheck className="w-4 h-4 text-[#0084ca]" /> Business License Verification
+              </h3>
+              {licenseStatus?.is_verified && (
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1 rounded-full">
+                  <BadgeCheck className="w-3.5 h-3.5" /> Verified
+                </span>
+              )}
+            </div>
+
+            {licenseStatus?.is_verified ? (
+              <div className={`flex items-center gap-3 p-3 rounded-xl ${dm ? "bg-emerald-900/20" : "bg-emerald-50"}`}>
+                <BadgeCheck className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                <p className={`text-sm ${dm ? "text-emerald-300" : "text-emerald-700"}`}>
+                  Your business is verified. A verified badge appears on all your job postings.
+                </p>
+              </div>
+            ) : licenseStatus?.license?.status === "pending" ? (
+              <div className={`flex items-center gap-3 p-3 rounded-xl ${dm ? "bg-amber-900/20" : "bg-amber-50"}`}>
+                <Clock className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                <div>
+                  <p className={`text-sm font-medium ${dm ? "text-amber-300" : "text-amber-700"}`}>Under Review</p>
+                  <p className={`text-xs mt-0.5 ${dm ? "text-amber-400" : "text-amber-600"}`}>
+                    Submitted: {new Date(licenseStatus.license.submitted_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {licenseStatus?.license?.status === "rejected" && (
+                  <div className={`flex items-start gap-3 p-3 rounded-xl ${dm ? "bg-red-900/20" : "bg-red-50"}`}>
+                    <ShieldAlert className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className={`text-sm font-medium text-red-500`}>License Rejected</p>
+                      {licenseStatus.license.admin_note && (
+                        <p className={`text-xs mt-0.5 ${dm ? "text-red-300" : "text-red-600"}`}>{licenseStatus.license.admin_note}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <p className={`text-sm ${muted}`}>
+                  Submit your business license or trade certificate to get a verified badge on your job postings.
+                </p>
+                <button
+                  onClick={() => setLicenseModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#0084ca] hover:bg-[#006ba6] text-white text-sm font-semibold rounded-xl transition-colors"
+                >
+                  <Upload className="w-4 h-4" />
+                  {licenseStatus?.license?.status === "rejected" ? "Resubmit License" : "Submit License"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* ── License Modal ── */}
+      {licenseModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => !licenseSubmitting && setLicenseModal(false)}>
+          <div className={`w-full max-w-md rounded-2xl border shadow-2xl ${dm ? "bg-gray-900 border-gray-800" : "bg-white border-slate-200"}`} onClick={e => e.stopPropagation()}>
+            <div className={`px-6 py-4 border-b flex items-center justify-between ${dm ? "border-gray-800" : "border-slate-200"}`}>
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-[#0084ca]" />
+                <h2 className={`font-semibold ${text}`}>Submit Business License</h2>
+              </div>
+              <button onClick={() => !licenseSubmitting && setLicenseModal(false)} className={`p-1.5 rounded-lg ${dm ? "hover:bg-gray-800 text-gray-400" : "hover:bg-slate-100 text-gray-500"}`}>
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className={`p-3 rounded-xl text-sm ${dm ? "bg-blue-900/20 text-blue-300" : "bg-blue-50 text-blue-700"}`}>
+                Upload your business registration certificate, trade license, or any official document that verifies your company.
+              </div>
+
+              {/* License image upload */}
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${dm ? "text-gray-300" : "text-gray-700"}`}>
+                  License Document <span className="text-red-500">*</span>
+                </label>
+                <label className={`flex flex-col items-center justify-center gap-2 w-full rounded-xl border-2 border-dashed cursor-pointer transition-colors overflow-hidden ${
+                  licenseFile
+                    ? dm ? "border-emerald-600 bg-emerald-900/20" : "border-emerald-400 bg-emerald-50"
+                    : dm ? "border-gray-600 hover:border-[#0084ca] bg-gray-800" : "border-gray-300 hover:border-[#0084ca] bg-gray-50"
+                }`} style={{ minHeight: "120px" }}>
+                  <input ref={licenseFileRef} type="file" accept="image/*" className="hidden" onChange={e => handleLicenseFileChange(e.target.files?.[0] || null)} />
+                  {licensePreview ? (
+                    <div className="w-full">
+                      <img src={licensePreview} alt="License preview" className="w-full max-h-40 object-contain p-2" />
+                      <p className={`text-xs text-center pb-2 ${muted}`}>Click to change</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 py-6">
+                      <Upload className={`w-8 h-8 ${muted}`} />
+                      <p className={`text-sm ${muted}`}>Click to upload license image</p>
+                    </div>
+                  )}
+                </label>
+              </div>
+
+              {[{ key: "license_name", label: "License / Certificate Name", required: true, placeholder: "e.g. Business Registration Certificate" },
+                { key: "license_number", label: "License Number", required: false, placeholder: "e.g. BR-2024-001234" },
+                { key: "issuing_authority", label: "Issuing Authority", required: false, placeholder: "e.g. Ministry of Trade, Addis Ababa" },
+              ].map(({ key, label, required, placeholder }) => (
+                <div key={key}>
+                  <label className={`block text-sm font-medium mb-1.5 ${dm ? "text-gray-300" : "text-gray-700"}`}>
+                    {label} {required && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    type="text"
+                    value={licenseForm[key as keyof typeof licenseForm]}
+                    onChange={e => setLicenseForm(f => ({ ...f, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                    className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[#0084ca]/30 focus:border-[#0084ca] transition-colors ${
+                      dm ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500" : "bg-white border-gray-200 text-gray-900 placeholder-gray-400"
+                    }`}
+                  />
+                </div>
+              ))}
+
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => !licenseSubmitting && setLicenseModal(false)}
+                  className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${dm ? "border-gray-700 text-gray-300 hover:bg-gray-800" : "border-slate-300 text-gray-600 hover:bg-slate-50"}`}>
+                  Cancel
+                </button>
+                <button onClick={handleLicenseSubmit} disabled={!licenseFile || !licenseForm.license_name.trim() || licenseSubmitting}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#0084ca] hover:bg-[#006ba6] text-white text-sm font-semibold transition-colors disabled:opacity-50">
+                  {licenseSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</> : <><CheckCircle className="w-4 h-4" /> Submit</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import {
   createOwner, toggleUser, deleteUser,
   getVerificationRequests, reviewVerification, getTalentProfileForAdmin,
 } from "../../api/admin/adminApi";
+import { API_BASE_URL } from "../../config/api";
 import {
   Users, Briefcase, DollarSign, ShieldCheck, Search,
   RefreshCw, Loader2, AlertCircle, CheckCircle, XCircle,
@@ -35,7 +36,7 @@ export default function AdminDashboard() {
   const { token, user } = useInternalAuth();
   const dm = darkMode;
 
-  const [tab, setTab] = useState<"overview" | "users" | "verification">("overview");
+  const [tab, setTab] = useState<"overview" | "users" | "verification" | "licenses">("overview");
   const [stats, setStats] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [verificationRequests, setVerificationRequests] = useState<any[]>([]);
@@ -44,6 +45,10 @@ export default function AdminDashboard() {
   const [adminNote, setAdminNote] = useState<Record<number, string>>({});
   const [profileModal, setProfileModal] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [licenseRequests, setLicenseRequests] = useState<any[]>([]);
+  const [licenseLoading, setLicenseLoading] = useState(false);
+  const [actionLicenseId, setActionLicenseId] = useState<number | null>(null);
+  const [licenseNote, setLicenseNote] = useState<Record<number, string>>({});
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [roleFilter, setRoleFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -92,9 +97,22 @@ export default function AdminDashboard() {
     finally { setVerifLoading(false); }
   }, [token]);
 
+  const loadLicenses = useCallback(async () => {
+    setLicenseLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/license-requests?status=pending`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const d = await res.json();
+      setLicenseRequests(d.requests || []);
+    } catch {}
+    finally { setLicenseLoading(false); }
+  }, [token]);
+
   useEffect(() => {
     if (tab === "verification") loadVerifications();
-  }, [tab, loadVerifications]);
+    if (tab === "licenses") loadLicenses();
+  }, [tab, loadVerifications, loadLicenses]);
 
   const handleToggle = async (id: number) => {
     setActionId(id);
@@ -143,6 +161,23 @@ export default function AdminDashboard() {
       loadStats();
     } catch (e: any) { setError(e.message); }
     finally { setActionVerifId(null); }
+  };
+
+  const handleLicense = async (id: number, action: "approve" | "reject") => {
+    setActionLicenseId(id);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/license-requests/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action, admin_note: licenseNote[id] || "" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      setSuccess(data.message);
+      setLicenseRequests(prev => prev.filter(r => r.id !== id));
+      loadStats();
+    } catch (e: any) { setError(e.message); }
+    finally { setActionLicenseId(null); }
   };
 
   const openProfile = async (req: any) => {
@@ -233,7 +268,7 @@ export default function AdminDashboard() {
         {/* Tabs + actions */}
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div className={`flex items-center gap-1 p-1 rounded-xl ${dm ? "bg-gray-800" : "bg-slate-200"}`}>
-            {(["overview", "users", "verification"] as const).map((t) => (
+            {(["overview", "users", "verification", "licenses"] as const).map((t) => (
               <button key={t} onClick={() => setTab(t)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${
                   tab === t ? "bg-white shadow-sm text-amber-600 dark:bg-gray-700" : dm ? "text-gray-400 hover:text-gray-200" : "text-gray-600 hover:text-gray-900"
@@ -245,6 +280,15 @@ export default function AdminDashboard() {
                     {verificationRequests.length > 0 && tab !== "verification" && (
                       <span className="w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
                         {verificationRequests.length}
+                      </span>
+                    )}
+                  </span>
+                ) : t === "licenses" ? (
+                  <span className="flex items-center gap-1.5">
+                    Licenses
+                    {licenseRequests.length > 0 && tab !== "licenses" && (
+                      <span className="w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                        {licenseRequests.length}
                       </span>
                     )}
                   </span>
@@ -472,6 +516,78 @@ export default function AdminDashboard() {
                             disabled={actionVerifId === req.id}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-semibold transition-colors disabled:opacity-50"
                           >
+                            <ThumbsDown className="w-3.5 h-3.5" /> Reject
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── LICENSES ── */}
+        {tab === "licenses" && (
+          <>
+            <div className="flex items-center justify-between mb-5">
+              <h1 className={`text-xl font-bold ${text}`}>Employer License Requests</h1>
+              <button onClick={loadLicenses} className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg transition-colors ${dm ? "hover:bg-gray-800 text-gray-400" : "hover:bg-slate-200 text-gray-500"}`}>
+                <RefreshCw className="w-4 h-4" /> Refresh
+              </button>
+            </div>
+            {licenseLoading ? (
+              <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-amber-500" /></div>
+            ) : licenseRequests.length === 0 ? (
+              <div className={`rounded-xl border p-16 text-center ${card}`}>
+                <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
+                <p className={`font-medium ${text}`}>No pending license requests</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {licenseRequests.map((req) => (
+                  <div key={req.id} className={`rounded-xl border p-5 ${card}`}>
+                    <div className="flex items-start gap-4">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-lg font-bold ${dm ? "bg-gray-700 text-gray-300" : "bg-slate-100 text-gray-600"}`}>
+                        {(req.company_name || req.name || "E")[0].toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 flex-wrap">
+                          <div>
+                            <p className={`font-semibold ${text}`}>{req.company_name || req.name}</p>
+                            <p className={`text-sm ${muted}`}>{req.email}</p>
+                          </div>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${dm ? "bg-amber-900/30 text-amber-300" : "bg-amber-100 text-amber-700"}`}>
+                            {new Date(req.submitted_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          </span>
+                        </div>
+                        <div className={`mt-2 text-sm ${muted} space-y-0.5`}>
+                          <p><span className="font-medium">License:</span> {req.license_name}</p>
+                          {req.license_number && <p><span className="font-medium">Number:</span> {req.license_number}</p>}
+                          {req.issuing_authority && <p><span className="font-medium">Issued by:</span> {req.issuing_authority}</p>}
+                        </div>
+                        {req.license_image && (
+                          <a href={req.license_image} target="_blank" rel="noreferrer" className="mt-3 block">
+                            <img src={req.license_image} alt="License" className="w-full max-h-48 object-contain rounded-xl border cursor-pointer hover:opacity-90 transition-opacity" />
+                            <p className={`text-xs mt-1 ${muted}`}>Click to open full size</p>
+                          </a>
+                        )}
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs flex-1 min-w-[160px] ${dm ? "bg-gray-800 border-gray-700" : "bg-white border-slate-300"}`}>
+                            <input
+                              value={licenseNote[req.id] || ""}
+                              onChange={(e) => setLicenseNote(n => ({ ...n, [req.id]: e.target.value }))}
+                              placeholder="Note (optional)"
+                              className={`bg-transparent outline-none flex-1 ${dm ? "text-white placeholder-gray-500" : "text-gray-900 placeholder-gray-400"}`}
+                            />
+                          </div>
+                          <button onClick={() => handleLicense(req.id, "approve")} disabled={actionLicenseId === req.id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold transition-colors disabled:opacity-50">
+                            {actionLicenseId === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ThumbsUp className="w-3.5 h-3.5" />} Approve
+                          </button>
+                          <button onClick={() => handleLicense(req.id, "reject")} disabled={actionLicenseId === req.id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-semibold transition-colors disabled:opacity-50">
                             <ThumbsDown className="w-3.5 h-3.5" /> Reject
                           </button>
                         </div>

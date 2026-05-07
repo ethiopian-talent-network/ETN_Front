@@ -17,6 +17,7 @@ export interface Job {
   companyLogo?: string;
   featured?: boolean;
   urgent?: boolean;
+  employer_verified?: boolean;
 }
 
 export interface Application {

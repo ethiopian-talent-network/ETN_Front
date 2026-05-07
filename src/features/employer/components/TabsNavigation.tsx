@@ -23,7 +23,7 @@ export const TabsNavigation: React.FC<TabsNavigationProps> = ({
   counts = {},
 }) => {
   return (
-    <div className={`flex items-center gap-1 p-1 rounded-xl overflow-x-auto scrollbar-hide w-full sm:w-fit ${darkMode ? "bg-gray-800" : "bg-slate-200"}`}>
+    <div className={`flex items-center gap-1 p-1 rounded-xl overflow-x-auto scrollbar-hide ${darkMode ? "bg-gray-800" : "bg-slate-200"}`}>
       {tabs.map(({ id, label, icon: Icon }) => {
         const count = counts[id];
         const isActive = activeTab === id;

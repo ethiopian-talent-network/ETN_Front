@@ -1,12 +1,23 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
-import { Plus, Bell, Moon, Sun, LogOut, Building2, User, ChevronDown } from "lucide-react";
+import { Plus, Bell, Moon, Sun, LogOut, Building2, User, ChevronDown, Briefcase, ShieldCheck, X, CheckCheck } from "lucide-react";
 import { useDarkMode } from "../../../contexts/DarkModeContext";
 import { useAuth } from "../../../contexts/AuthContext";
 import { EMPLOYER_ROUTES } from "../../../config/routes";
 import { API_BASE_URL } from "../../../config/api";
 
-const getAuthHeaders = () => {
+interface EmployerNotification {
+  id: number;
+  type: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  sender_name?: string;
+  sender_image?: string;
+}
+
+const getAuthHeaders = (): Record<string, string> => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
@@ -18,6 +29,44 @@ export const Header: React.FC = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState<EmployerNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/notifications/employer`, {
+        headers: { ...getAuthHeaders() },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setNotifications(data.notifications || []);
+      setUnreadCount(data.unread_count || 0);
+    } catch {}
+  }, []);
+
+  const markAllRead = async () => {
+    try {
+      await fetch(`${API_BASE_URL}/api/notifications/read-all`, {
+        method: "POST", headers: { ...getAuthHeaders() },
+      });
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch {}
+  };
+
+  const markOneRead = async (id: number) => {
+    try {
+      await fetch(`${API_BASE_URL}/api/notifications/${id}/read`, {
+        method: "POST", headers: { ...getAuthHeaders() },
+      });
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch {}
+  };
 
   const getInitials = (name: string) =>
     name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -45,9 +94,18 @@ export const Header: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -75,10 +133,10 @@ export const Header: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate(EMPLOYER_ROUTES.POST_JOB.path)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#0084ca] hover:bg-[#006ba6] text-white text-sm font-semibold rounded-lg transition-colors"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#0084ca] hover:bg-[#006ba6] text-white text-sm font-semibold rounded-lg transition-colors"
             >
-              <Plus className="w-4 h-4" />
-              Post a Job
+              <Plus className="w-4 h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Post a Job</span>
             </button>
 
             <button
@@ -88,10 +146,73 @@ export const Header: React.FC = () => {
               {dm ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
 
-            <button className={`relative p-2 rounded-lg transition-colors ${dm ? "text-gray-400 hover:text-white hover:bg-gray-800" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"}`}>
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-            </button>
+            <div className="relative" ref={notifRef}>
+              <button
+                onClick={() => setNotifOpen(o => !o)}
+                className={`relative p-2 rounded-lg transition-colors ${dm ? "text-gray-400 hover:text-white hover:bg-gray-800" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"}`}
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {notifOpen && (
+                <div className={`absolute right-0 top-full mt-2 w-80 rounded-xl shadow-2xl border z-50 overflow-hidden ${dm ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
+                  <div className={`flex items-center justify-between px-4 py-3 border-b ${dm ? "border-gray-700" : "border-gray-100"}`}>
+                    <h3 className={`font-semibold text-sm ${dm ? "text-white" : "text-gray-900"}`}>Notifications</h3>
+                    {unreadCount > 0 && (
+                      <button onClick={markAllRead} className="text-xs text-[#0084ca] hover:underline">
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-96 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className={`text-center py-10 text-sm ${dm ? "text-gray-500" : "text-gray-400"}`}>
+                        <Bell className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                        No notifications
+                      </div>
+                    ) : (
+                      notifications.map((notif) => (
+                        <div
+                          key={notif.id}
+                          onClick={() => {
+                            markOneRead(notif.id);
+                            if (notif.type === "new_application") {
+                              setNotifOpen(false);
+                              navigate(EMPLOYER_ROUTES.ALL_PROPOSALS.path);
+                            }
+                          }}
+                          className={`px-4 py-3 border-b last:border-0 cursor-pointer ${dm ? "border-gray-700 hover:bg-gray-700" : "border-gray-50 hover:bg-gray-50"} ${!notif.is_read ? (dm ? "bg-blue-900/20" : "bg-blue-50/60") : ""}`}
+                        >
+                          <div className="flex items-start gap-3">
+                            {notif.sender_image ? (
+                              <img src={notif.sender_image} alt={notif.sender_name} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                            ) : (
+                              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0084ca] to-purple-600 flex items-center justify-center flex-shrink-0">
+                                <Briefcase className="w-4 h-4 text-white" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm font-medium leading-snug ${dm ? "text-white" : "text-gray-900"}`}>{notif.title}</p>
+                              <p className={`text-xs mt-0.5 ${dm ? "text-gray-400" : "text-gray-500"}`}>{notif.message}</p>
+                              <p className={`text-xs mt-1 ${dm ? "text-gray-500" : "text-gray-400"}`}>{new Date(notif.created_at).toLocaleDateString()}</p>
+                            </div>
+                            {!notif.is_read && (
+                              <span className="w-2 h-2 rounded-full bg-[#0084ca] flex-shrink-0 mt-1" />
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className={`h-6 w-px mx-1 ${dm ? "bg-gray-700" : "bg-gray-200"}`} />
 

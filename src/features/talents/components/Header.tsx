@@ -17,6 +17,7 @@ import {
   declineConnectionNotification,
   type Notification,
 } from "../../../api/talent/talentApi";
+import { API_BASE_URL } from "../../../config/api";
 
 interface HeaderProps {
   darkMode: boolean;
@@ -36,6 +37,7 @@ export function Header({
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [messageUnreadCount, setMessageUnreadCount] = useState(0);
   const [actioningId, setActioningId] = useState<number | null>(null);
   const networkRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -55,11 +57,49 @@ export function Header({
     } catch {}
   }, []);
 
+  const loadMessageUnreadCount = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      
+      const response = await fetch(`${API_BASE_URL}/api/messages/unread-count`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setMessageUnreadCount(data.unread_count || 0);
+      }
+    } catch {}
+  }, []);
+
   useEffect(() => {
     loadNotifications();
-    const interval = setInterval(loadNotifications, 30000);
+    loadMessageUnreadCount();
+    const interval = setInterval(() => {
+      loadNotifications();
+      loadMessageUnreadCount();
+    }, 30000);
     return () => clearInterval(interval);
-  }, [loadNotifications]);
+  }, [loadNotifications, loadMessageUnreadCount]);
+
+  // Listen for message read events to refresh count
+  useEffect(() => {
+    const handleMessageRead = () => {
+      loadMessageUnreadCount();
+    };
+    
+    window.addEventListener('messages-read', handleMessageRead);
+    window.addEventListener('focus', loadMessageUnreadCount);
+    
+    return () => {
+      window.removeEventListener('messages-read', handleMessageRead);
+      window.removeEventListener('focus', loadMessageUnreadCount);
+    };
+  }, [loadMessageUnreadCount]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -415,7 +455,11 @@ export function Header({
                 <MessageSquare
                   className={`w-4 h-4 sm:w-5 sm:h-5 ${darkMode ? "group-hover:text-gray-300" : "group-hover:text-gray-700"}`}
                 />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                {messageUnreadCount > 0 && (
+                  <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {messageUnreadCount > 9 ? "9+" : messageUnreadCount}
+                  </span>
+                )}
                 <span className="sr-only">Messages</span>
               </button>
             </Link>
