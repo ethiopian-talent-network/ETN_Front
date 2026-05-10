@@ -25,6 +25,7 @@ import VerifyIdentity from "./pages/VerifyIdentity";
 import OwnerDashboard from "./pages/owner/OwnerDashboard";
 import InternalLogin from "./pages/admin/InternalLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import TalentsDashboard from "./pages/admin/TalentsDashboard";
 import { DarkModeProvider } from "./contexts/DarkModeContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/routes/ProtectedRoute";
@@ -239,6 +240,7 @@ function App() {
               {/* Internal portal routes — no auth wrapper, handled internally */}
               <Route path="/admin/login" element={<InternalLogin />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/talents" element={<TalentsDashboard />} />
 
               {/* Owner route */}
               <Route path={OWNER_ROUTES.DASHBOARD.path} element={<OwnerDashboard />} />

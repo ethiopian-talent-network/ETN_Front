@@ -150,6 +150,7 @@ const normalizeJob = (job: any): Job => ({
   posted: job.posted || job.created_at || "",
   match: job.match || Math.floor(Math.random() * 30) + 70,
   status: job.status === "active" ? "new" : (job.status || "new"),
+  verified: job.verified || job.employerVerified || false, // Preserve verified status
 });
 
 // Fetch skills for a single job by id

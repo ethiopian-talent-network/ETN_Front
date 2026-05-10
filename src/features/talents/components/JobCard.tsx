@@ -7,10 +7,10 @@ import {
   Heart,
   CheckCircle,
   ExternalLink,
-  BadgeCheck,
 } from "lucide-react";
 import { Link } from "react-router";
 import { Button } from "../../../components/ui/button";
+import { VerifiedBadge } from "../../../components/ui/VerifiedBadge";
 import { TALENT_ROUTES, buildRoute } from "../../../config/routes";
 import type { Job, JobSection } from "../types";
 
@@ -54,12 +54,10 @@ export function JobCard({
             <div className={`flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs sm:text-sm ${
               darkMode ? "text-gray-400" : "text-gray-600"
             }`}>
-              <span className="flex items-center gap-1">
-                {job.company}
-                {job.employer_verified && (
-                  <BadgeCheck className="w-3.5 h-3.5 text-[#0084ca] flex-shrink-0" title="Verified Employer" />
-                )}
-              </span>
+              <div className="flex items-center gap-2">
+                <span>{job.company}</span>
+                <VerifiedBadge verified={job.verified} size="sm" showText={false} />
+              </div>
               <span className="hidden sm:inline">•</span>
               <span>{job.posted}</span>
               {job.urgent && (

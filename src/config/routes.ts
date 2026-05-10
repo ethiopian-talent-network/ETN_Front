@@ -7,6 +7,8 @@ export const RouteRole = {
   PUBLIC: "public",
   TALENT: "talent",
   EMPLOYER: "employer",
+  ADMIN: "admin",
+  OWNER: "owner",
   BOTH: "talent,employer",
 } as const;
 
@@ -191,7 +193,44 @@ export const OWNER_ROUTES: Record<string, RouteConfig> = {
   DASHBOARD: {
     path: "/owner",
     title: "Owner Dashboard",
+    roles: [RouteRole.OWNER],
     description: "Platform payment management",
+  },
+};
+
+/**
+ * Admin routes - accessible only by admin users
+ */
+export const ADMIN_ROUTES: Record<string, RouteConfig> = {
+  DASHBOARD: {
+    path: "/admin",
+    title: "Admin Dashboard",
+    roles: [RouteRole.ADMIN],
+    description: "Platform administration",
+  },
+  INTERNAL_LOGIN: {
+    path: "/admin/login",
+    title: "Admin Login",
+    roles: [RouteRole.PUBLIC],
+    description: "Admin login page",
+  },
+  LICENSE_REVIEW: {
+    path: "/admin/license-review",
+    title: "License Review",
+    roles: [RouteRole.ADMIN],
+    description: "Review employer license requests",
+  },
+  USER_MANAGEMENT: {
+    path: "/admin/users",
+    title: "User Management",
+    roles: [RouteRole.ADMIN],
+    description: "Manage platform users",
+  },
+  VERIFICATION_REQUESTS: {
+    path: "/admin/verification-requests",
+    title: "Verification Requests",
+    roles: [RouteRole.ADMIN],
+    description: "Review talent verification requests",
   },
 };
 
@@ -214,6 +253,8 @@ export const ALL_ROUTES = {
   ...PUBLIC_ROUTES,
   ...TALENT_ROUTES,
   ...EMPLOYER_ROUTES,
+  ...ADMIN_ROUTES,
+  ...OWNER_ROUTES,
   ...SHARED_ROUTES,
 };
 

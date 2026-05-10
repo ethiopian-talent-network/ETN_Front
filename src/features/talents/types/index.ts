@@ -18,6 +18,7 @@ export interface Job {
   featured?: boolean;
   urgent?: boolean;
   employer_verified?: boolean;
+  verified?: boolean; // New field for employer verification
 }
 
 export interface Application {

@@ -5,11 +5,12 @@ import {
   getOwnerDashboard, getOwnerPayments, getOwnerEscrow,
   verifyPaymentWithChapa, approvePayment,
 } from "../../api/owner/ownerApi";
+import PayoutsPanel from "./PayoutsPanel";
 import {
   DollarSign, ShieldCheck, CheckCircle, XCircle, Clock,
   Search, RefreshCw, Loader2, AlertCircle, Lock, Unlock,
   TrendingUp, Users, Briefcase, ChevronLeft, ChevronRight,
-  Sun, Moon, Shield,
+  Sun, Moon, Shield, Receipt, Printer,
 } from "lucide-react";
 
 const STATUS_BADGE: Record<string, string> = {
@@ -46,7 +47,7 @@ export default function OwnerDashboard() {
   const internalToken = localStorage.getItem("internal_token") || "";
   const effectiveToken = internalToken || token || "";
 
-  const [tab, setTab] = useState<"overview" | "payments" | "escrow">("overview");
+  const [tab, setTab] = useState<"overview" | "payments" | "escrow" | "payouts">("overview");
   const [stats, setStats] = useState<any>(null);
   const [payments, setPayments] = useState<any[]>([]);
   const [escrows, setEscrows] = useState<any[]>([]);
@@ -59,6 +60,7 @@ export default function OwnerDashboard() {
   const [actionId, setActionId] = useState<number | null>(null);
   const [verifyingId, setVerifyingId] = useState<number | null>(null);
   const [verifiedPayments, setVerifiedPayments] = useState<Set<number>>(new Set());
+  const [receiptModal, setReceiptModal] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -210,7 +212,7 @@ export default function OwnerDashboard() {
 
         {/* Tabs */}
         <div className={`flex items-center gap-1 p-1 rounded-xl mb-6 w-fit ${dm ? "bg-gray-800" : "bg-slate-200"}`}>
-          {(["overview", "payments", "escrow"] as const).map((t) => (
+          {(["overview", "payments", "escrow", "payouts"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -357,7 +359,14 @@ export default function OwnerDashboard() {
                               )}
                             </div>
                           )}
-                          {p.status === "success" && <span className={`text-xs ${muted}`}>Approved</span>}
+                          {p.status === "success" && (
+                            <button
+                              onClick={() => setReceiptModal(p)}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${dm ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-slate-100 text-gray-700 hover:bg-slate-200"}`}
+                            >
+                              <Receipt className="w-3 h-3" /> Receipt
+                            </button>
+                          )}
                           {p.status === "failed" && <span className={`text-xs text-red-400`}>Failed</span>}
                         </td>
                       </tr>
@@ -385,6 +394,11 @@ export default function OwnerDashboard() {
               )}
             </div>
           </>
+        )}
+
+        {/* ── PAYOUTS ── */}
+        {tab === "payouts" && (
+          <PayoutsPanel />
         )}
 
         {/* ── ESCROW ── */}
@@ -469,6 +483,110 @@ export default function OwnerDashboard() {
           </>
         )}
       </div>
+
+      {/* ── Receipt Modal ── */}
+      {receiptModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setReceiptModal(null)}>
+          <div className={`w-full max-w-2xl rounded-2xl border shadow-2xl ${dm ? "bg-gray-900 border-gray-800" : "bg-white border-slate-200"}`} onClick={e => e.stopPropagation()}>
+            <div className={`px-6 py-4 border-b flex items-center justify-between ${dm ? "bg-gray-900 border-gray-800" : "bg-white border-slate-200"}`}>
+              <div className="flex items-center gap-2">
+                <Receipt className="w-5 h-5 text-emerald-500" />
+                <h2 className={`font-semibold ${text}`}>Payment Receipt</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${dm ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-slate-100 text-gray-700 hover:bg-slate-200"}`}
+                >
+                  <Printer className="w-4 h-4" /> Print
+                </button>
+                <button onClick={() => setReceiptModal(null)} className={`p-1.5 rounded-lg ${dm ? "hover:bg-gray-800 text-gray-400" : "hover:bg-slate-100 text-gray-500"}`}>
+                  <XCircle className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-8 space-y-6">
+              {/* Header */}
+              <div className="text-center border-b pb-6">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#0084ca] to-violet-600 flex items-center justify-center mx-auto mb-3">
+                  <ShieldCheck className="w-6 h-6 text-white" />
+                </div>
+                <h3 className={`text-2xl font-bold ${text}`}>ETN Payment Receipt</h3>
+                <p className={`text-sm mt-1 ${muted}`}>Ethiopian Talent Network</p>
+              </div>
+
+              {/* Receipt Details */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${muted}`}>Receipt Number</p>
+                  <p className={`text-sm font-mono ${text}`}>RCP-{receiptModal.id.toString().padStart(6, '0')}</p>
+                </div>
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${muted}`}>Transaction ID</p>
+                  <p className={`text-sm font-mono ${text}`}>{receiptModal.transaction_id}</p>
+                </div>
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${muted}`}>Payment Date</p>
+                  <p className={`text-sm ${text}`}>{new Date(receiptModal.create_at).toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                </div>
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${muted}`}>Payment Method</p>
+                  <p className={`text-sm capitalize ${text}`}>{receiptModal.method}</p>
+                </div>
+              </div>
+
+              {/* Parties */}
+              <div className={`grid grid-cols-2 gap-4 p-4 rounded-xl ${dm ? "bg-gray-800" : "bg-slate-50"}`}>
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${muted}`}>From (Employer)</p>
+                  <p className={`text-sm font-semibold ${text}`}>{receiptModal.company_name}</p>
+                  <p className={`text-xs ${muted}`}>{receiptModal.employer_email || receiptModal.employer_name}</p>
+                </div>
+                {receiptModal.talent_name && (
+                  <div>
+                    <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${muted}`}>To (Talent)</p>
+                    <p className={`text-sm font-semibold ${text}`}>{receiptModal.talent_name}</p>
+                    <p className={`text-xs ${muted}`}>{receiptModal.talent_email}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Job Details */}
+              {receiptModal.job_title && (
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${muted}`}>Job Title</p>
+                  <p className={`text-sm ${text}`}>{receiptModal.job_title}</p>
+                </div>
+              )}
+
+              {/* Amount */}
+              <div className={`p-6 rounded-xl text-center ${dm ? "bg-emerald-900/20 border border-emerald-800" : "bg-emerald-50 border border-emerald-200"}`}>
+                <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${muted}`}>Total Amount Paid</p>
+                <p className="text-3xl font-bold text-emerald-600">{receiptModal.amount.toLocaleString()} {receiptModal.currency}</p>
+              </div>
+
+              {/* Status */}
+              <div className="flex items-center justify-center gap-2">
+                <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
+                  receiptModal.status === "success" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
+                  receiptModal.status === "pending" ? "bg-amber-50 text-amber-700 border border-amber-200" :
+                  "bg-red-50 text-red-700 border border-red-200"
+                }`}>
+                  <CheckCircle className="w-4 h-4" />
+                  Payment {receiptModal.status === "success" ? "Successful" : receiptModal.status}
+                </span>
+              </div>
+
+              {/* Footer */}
+              <div className={`text-center text-xs pt-4 border-t ${dm ? "border-gray-800" : "border-slate-200"} ${muted}`}>
+                <p>This is an official receipt from Ethiopian Talent Network</p>
+                <p className="mt-1">For support, contact: support@etn.com</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

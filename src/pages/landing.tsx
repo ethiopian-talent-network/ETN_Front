@@ -191,13 +191,20 @@ export default function Landing() {
               {isAuthenticated && user ? (
                 <>
                   <Link
-                    to={user.role === "employer" ? "/employer-dashboard" : "/talent-dashboard"}
+                    to={
+                      user.role === "employer"
+                        ? "/employer-dashboard"
+                        : "/talent-dashboard"
+                    }
                     className={`text-sm font-medium transition-colors ${darkMode ? "text-gray-300 hover:text-white" : "text-gray-700 hover:text-gray-900"}`}
                   >
                     Dashboard
                   </Link>
                   <button
-                    onClick={() => { logout(); navigate("/login"); }}
+                    onClick={() => {
+                      logout();
+                      navigate("/login");
+                    }}
                     className={`text-sm font-medium transition-colors ${darkMode ? "text-gray-300 hover:text-white" : "text-gray-700 hover:text-gray-900"}`}
                   >
                     Log out
@@ -277,13 +284,23 @@ export default function Landing() {
               </div>
               {isAuthenticated && user ? (
                 <>
-                  <Link to={user.role === "employer" ? "/employer-dashboard" : "/talent-dashboard"} className="block">
+                  <Link
+                    to={
+                      user.role === "employer"
+                        ? "/employer-dashboard"
+                        : "/talent-dashboard"
+                    }
+                    className="block"
+                  >
                     <Button className="w-full bg-[#0084ca] hover:bg-[#006ba6] text-white rounded-full">
                       Go to Dashboard
                     </Button>
                   </Link>
                   <button
-                    onClick={() => { logout(); navigate("/login"); }}
+                    onClick={() => {
+                      logout();
+                      navigate("/login");
+                    }}
                     className={`block w-full text-left py-2 font-medium transition-colors ${darkMode ? "text-gray-300 hover:text-white" : "text-gray-700 hover:text-gray-900"}`}
                   >
                     Log out

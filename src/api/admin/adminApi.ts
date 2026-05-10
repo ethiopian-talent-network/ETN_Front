@@ -49,3 +49,8 @@ export const reviewVerification = (token: string, id: number, action: "approve" 
 
 export const getTalentProfileForAdmin = (token: string, userId: number) =>
   fetch(`${API_BASE_URL}/api/admin/talent-profile/${userId}`, { headers: h(token) }).then((r) => r.json());
+
+export const getAllPayments = (token: string, params: Record<string, any> = {}) => {
+  const q = new URLSearchParams(params).toString();
+  return fetch(`${API_BASE_URL}/api/admin/payments?${q}`, { headers: h(token) }).then((r) => r.json());
+};

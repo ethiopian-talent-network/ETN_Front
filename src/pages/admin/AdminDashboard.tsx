@@ -5,6 +5,7 @@ import {
   getAdminDashboard, getAdminUsers,
   createOwner, toggleUser, deleteUser,
   getVerificationRequests, reviewVerification, getTalentProfileForAdmin,
+  getAllPayments,
 } from "../../api/admin/adminApi";
 import { API_BASE_URL } from "../../config/api";
 import {
@@ -13,6 +14,7 @@ import {
   ToggleLeft, ToggleRight, Trash2, Sun, Moon, TrendingUp,
   Building2, Crown, FileText, ChevronLeft, ChevronRight,
   Eye, ThumbsUp, ThumbsDown, ExternalLink, Award, FolderOpen,
+  Receipt, Printer,
 } from "lucide-react";
 
 function useInternalAuth() {
@@ -36,7 +38,7 @@ export default function AdminDashboard() {
   const { token, user } = useInternalAuth();
   const dm = darkMode;
 
-  const [tab, setTab] = useState<"overview" | "users" | "verification" | "licenses">("overview");
+  const [tab, setTab] = useState<"overview" | "users" | "verification" | "licenses" | "payments">("overview");
   const [stats, setStats] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [verificationRequests, setVerificationRequests] = useState<any[]>([]);
@@ -49,6 +51,11 @@ export default function AdminDashboard() {
   const [licenseLoading, setLicenseLoading] = useState(false);
   const [actionLicenseId, setActionLicenseId] = useState<number | null>(null);
   const [licenseNote, setLicenseNote] = useState<Record<number, string>>({});
+  const [payments, setPayments] = useState<any[]>([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [paymentsPagination, setPaymentsPagination] = useState({ page: 1, pages: 1, total: 0 });
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState("all");
+  const [receiptModal, setReceiptModal] = useState<any>(null);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [roleFilter, setRoleFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -60,9 +67,9 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Redirect if not admin
+  // Redirect if not admin or owner
   useEffect(() => {
-    if (!token || user?.role !== "admin") navigate("/admin/login");
+    if (!token || (user?.role !== "admin" && user?.role !== "owner")) navigate("/admin/login");
   }, [token, user]);
 
   const loadStats = useCallback(async () => {
@@ -109,10 +116,25 @@ export default function AdminDashboard() {
     finally { setLicenseLoading(false); }
   }, [token]);
 
+  const loadPayments = useCallback(async (page = 1) => {
+    setPaymentsLoading(true);
+    try {
+      const res = await getAllPayments(token, {
+        page,
+        limit: 15,
+        ...(paymentStatusFilter !== "all" ? { status: paymentStatusFilter } : {}),
+      });
+      setPayments(res.payments || []);
+      setPaymentsPagination(res.pagination || { page: 1, pages: 1, total: 0 });
+    } catch (e: any) { setError(e.message); }
+    finally { setPaymentsLoading(false); }
+  }, [token, paymentStatusFilter]);
+
   useEffect(() => {
     if (tab === "verification") loadVerifications();
     if (tab === "licenses") loadLicenses();
-  }, [tab, loadVerifications, loadLicenses]);
+    if (tab === "payments") loadPayments(1);
+  }, [tab, loadVerifications, loadLicenses, loadPayments]);
 
   const handleToggle = async (id: number) => {
     setActionId(id);
@@ -233,6 +255,12 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => navigate("/admin/talents")}
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${dm ? "bg-gray-800 text-gray-300 hover:bg-gray-700" : "bg-slate-100 text-gray-600 hover:bg-slate-200"}`}
+            >
+              <Users className="w-3.5 h-3.5" /> Talents
+            </button>
+            <button
               onClick={() => navigate("/owner")}
               className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${dm ? "bg-gray-800 text-gray-300 hover:bg-gray-700" : "bg-slate-100 text-gray-600 hover:bg-slate-200"}`}
             >
@@ -268,7 +296,7 @@ export default function AdminDashboard() {
         {/* Tabs + actions */}
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div className={`flex items-center gap-1 p-1 rounded-xl ${dm ? "bg-gray-800" : "bg-slate-200"}`}>
-            {(["overview", "users", "verification", "licenses"] as const).map((t) => (
+            {(["overview", "users", "verification", "licenses", "payments"] as const).map((t) => (
               <button key={t} onClick={() => setTab(t)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${
                   tab === t ? "bg-white shadow-sm text-amber-600 dark:bg-gray-700" : dm ? "text-gray-400 hover:text-gray-200" : "text-gray-600 hover:text-gray-900"
@@ -292,7 +320,7 @@ export default function AdminDashboard() {
                       </span>
                     )}
                   </span>
-                ) : t}
+                ) : t === "payments" ? "Payments" : t}
               </button>
             ))}
           </div>
@@ -599,6 +627,116 @@ export default function AdminDashboard() {
             )}
           </>
         )}
+
+        {/* ── PAYMENTS ── */}
+        {tab === "payments" && (
+          <>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
+              <h1 className={`text-xl font-bold ${text}`}>Payment Receipts</h1>
+              <div className="flex gap-2 flex-wrap">
+                <select value={paymentStatusFilter} onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                  className={`px-3 py-2 rounded-lg border text-sm outline-none ${inputCls}`}>
+                  <option value="all">All Status</option>
+                  <option value="success">Success</option>
+                  <option value="pending">Pending</option>
+                  <option value="failed">Failed</option>
+                </select>
+                <button onClick={() => loadPayments(1)} className="px-3 py-2 rounded-lg bg-amber-500 text-white text-sm hover:bg-amber-600 transition-colors">
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {paymentsLoading ? (
+              <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-amber-500" /></div>
+            ) : payments.length === 0 ? (
+              <div className={`rounded-xl border p-16 text-center ${card}`}>
+                <Receipt className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+                <p className={`font-medium ${text}`}>No payments found</p>
+              </div>
+            ) : (
+              <>
+                <div className={`rounded-xl border overflow-hidden ${card}`}>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className={`border-b ${dm ? "border-gray-800 bg-gray-900/60" : "border-slate-200 bg-slate-50"}`}>
+                          <th className={thCls}>Transaction ID</th>
+                          <th className={thCls}>Employer</th>
+                          <th className={thCls}>Job</th>
+                          <th className={thCls}>Amount</th>
+                          <th className={thCls}>Status</th>
+                          <th className={thCls}>Date</th>
+                          <th className={thCls}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className={`divide-y ${dm ? "divide-gray-800" : "divide-slate-100"}`}>
+                        {payments.map((p) => (
+                          <tr key={p.id} className={`transition-colors ${dm ? "hover:bg-gray-800/50" : "hover:bg-slate-50"}`}>
+                            <td className={tdCls}>
+                              <p className="font-mono text-xs">{p.transaction_id}</p>
+                            </td>
+                            <td className={tdCls}>
+                              <p className="font-medium">{p.company_name}</p>
+                              <p className={`text-xs ${muted}`}>{p.employer_email}</p>
+                            </td>
+                            <td className={tdCls}>
+                              <p className="font-medium">{p.job_title}</p>
+                            </td>
+                            <td className={tdCls}>
+                              <p className="font-semibold">{p.amount.toLocaleString()} {p.currency}</p>
+                            </td>
+                            <td className={tdCls}>
+                              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                p.status === "success" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
+                                p.status === "pending" ? "bg-amber-50 text-amber-700 border border-amber-200" :
+                                "bg-red-50 text-red-700 border border-red-200"
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${
+                                  p.status === "success" ? "bg-emerald-500" :
+                                  p.status === "pending" ? "bg-amber-500" : "bg-red-500"
+                                }`} />
+                                {p.status}
+                              </span>
+                            </td>
+                            <td className={`${tdCls} whitespace-nowrap`}>
+                              {new Date(p.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            </td>
+                            <td className={tdCls}>
+                              <button
+                                onClick={() => setReceiptModal(p)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${dm ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-slate-100 text-gray-700 hover:bg-slate-200"}`}
+                              >
+                                <Receipt className="w-3.5 h-3.5" /> View Receipt
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {paymentsPagination.pages > 1 && (
+                    <div className={`flex items-center justify-between px-4 py-3 border-t text-sm ${dm ? "border-gray-800 text-gray-400" : "border-slate-200 text-gray-500"}`}>
+                      <span>{paymentsPagination.total} total payments</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => loadPayments(paymentsPagination.page - 1)} disabled={paymentsPagination.page === 1}
+                          className={`p-1.5 rounded-lg disabled:opacity-40 ${dm ? "hover:bg-gray-800" : "hover:bg-slate-100"}`}>
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <span>Page {paymentsPagination.page} of {paymentsPagination.pages}</span>
+                        <button onClick={() => loadPayments(paymentsPagination.page + 1)} disabled={paymentsPagination.page === paymentsPagination.pages}
+                          className={`p-1.5 rounded-lg disabled:opacity-40 ${dm ? "hover:bg-gray-800" : "hover:bg-slate-100"}`}>
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </>
+        )}
       </div>
 
       {/* ── Profile Modal ── */}
@@ -825,6 +963,115 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Receipt Modal ── */}
+      {receiptModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setReceiptModal(null)}>
+          <div className={`w-full max-w-2xl rounded-2xl border shadow-2xl ${dm ? "bg-gray-900 border-gray-800" : "bg-white border-slate-200"}`} onClick={e => e.stopPropagation()}>
+            <div className={`px-6 py-4 border-b flex items-center justify-between ${dm ? "bg-gray-900 border-gray-800" : "bg-white border-slate-200"}`}>
+              <div className="flex items-center gap-2">
+                <Receipt className="w-5 h-5 text-emerald-500" />
+                <h2 className={`font-semibold ${text}`}>Payment Receipt</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${dm ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-slate-100 text-gray-700 hover:bg-slate-200"}`}
+                >
+                  <Printer className="w-4 h-4" /> Print
+                </button>
+                <button onClick={() => setReceiptModal(null)} className={`p-1.5 rounded-lg ${dm ? "hover:bg-gray-800 text-gray-400" : "hover:bg-slate-100 text-gray-500"}`}>
+                  <XCircle className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-8 space-y-6">
+              {/* Header */}
+              <div className="text-center border-b pb-6">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center mx-auto mb-3">
+                  <ShieldCheck className="w-6 h-6 text-white" />
+                </div>
+                <h3 className={`text-2xl font-bold ${text}`}>ETN Payment Receipt</h3>
+                <p className={`text-sm mt-1 ${muted}`}>Ethiopian Talent Network</p>
+              </div>
+
+              {/* Receipt Details */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${muted}`}>Receipt Number</p>
+                  <p className={`text-sm font-mono ${text}`}>RCP-{receiptModal.id.toString().padStart(6, '0')}</p>
+                </div>
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${muted}`}>Transaction ID</p>
+                  <p className={`text-sm font-mono ${text}`}>{receiptModal.transaction_id}</p>
+                </div>
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${muted}`}>Payment Date</p>
+                  <p className={`text-sm ${text}`}>{new Date(receiptModal.created_at).toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                </div>
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${muted}`}>Payment Method</p>
+                  <p className={`text-sm capitalize ${text}`}>{receiptModal.method}</p>
+                </div>
+              </div>
+
+              {/* Parties */}
+              <div className={`grid grid-cols-2 gap-4 p-4 rounded-xl ${dm ? "bg-gray-800" : "bg-slate-50"}`}>
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${muted}`}>From (Employer)</p>
+                  <p className={`text-sm font-semibold ${text}`}>{receiptModal.company_name}</p>
+                  <p className={`text-xs ${muted}`}>{receiptModal.employer_email}</p>
+                </div>
+                {receiptModal.talent_name && (
+                  <div>
+                    <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${muted}`}>To (Talent)</p>
+                    <p className={`text-sm font-semibold ${text}`}>{receiptModal.talent_name}</p>
+                    <p className={`text-xs ${muted}`}>{receiptModal.talent_email}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Job Details */}
+              <div>
+                <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${muted}`}>Job Title</p>
+                <p className={`text-sm ${text}`}>{receiptModal.job_title}</p>
+              </div>
+
+              {/* Amount */}
+              <div className={`p-6 rounded-xl text-center ${dm ? "bg-emerald-900/20 border border-emerald-800" : "bg-emerald-50 border border-emerald-200"}`}>
+                <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${muted}`}>Total Amount Paid</p>
+                <p className="text-3xl font-bold text-emerald-600">{receiptModal.amount.toLocaleString()} {receiptModal.currency}</p>
+              </div>
+
+              {/* Status */}
+              <div className="flex items-center justify-center gap-2">
+                <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
+                  receiptModal.status === "success" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
+                  receiptModal.status === "pending" ? "bg-amber-50 text-amber-700 border border-amber-200" :
+                  "bg-red-50 text-red-700 border border-red-200"
+                }`}>
+                  <CheckCircle className="w-4 h-4" />
+                  Payment {receiptModal.status === "success" ? "Successful" : receiptModal.status}
+                </span>
+              </div>
+
+              {/* Escrow Status */}
+              {receiptModal.escrow_status && (
+                <div className={`text-center text-xs ${muted}`}>
+                  <p>Escrow Status: <span className="font-semibold capitalize">{receiptModal.escrow_status}</span></p>
+                </div>
+              )}
+
+              {/* Footer */}
+              <div className={`text-center text-xs pt-4 border-t ${dm ? "border-gray-800" : "border-slate-200"} ${muted}`}>
+                <p>This is an official receipt from Ethiopian Talent Network</p>
+                <p className="mt-1">For support, contact: support@etn.com</p>
+              </div>
+            </div>
           </div>
         </div>
       )}

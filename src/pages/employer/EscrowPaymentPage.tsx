@@ -8,13 +8,15 @@ import {
   verifyPayment,
   getEscrowStatus,
   releasePayment,
+  getPaymentReceipt,
   type EscrowInfo,
+  type PaymentReceipt,
 } from "../../api/payment/paymentApi";
 import { updateApplicationStatus } from "../../api/employer/employerApi";
 import {
   ShieldCheck, DollarSign, CheckCircle, Clock, AlertCircle,
   Loader2, ArrowLeft, Lock, Unlock, User, UserCheck,
-  CreditCard, ChevronRight, Info,
+  CreditCard, ChevronRight, Info, FileText, Download, Printer,
 } from "lucide-react";
 
 const CURRENCIES = ["ETB", "USD"];
@@ -49,6 +51,7 @@ export default function EscrowPaymentPage() {
   const applicationId: number | undefined = (location.state as any)?.application_id;
 
   const [escrow, setEscrow] = useState<EscrowInfo | null>(null);
+  const [receipt, setReceipt] = useState<PaymentReceipt | null>(null);
   const [loadingEscrow, setLoadingEscrow] = useState(true);
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("ETB");
@@ -63,12 +66,26 @@ export default function EscrowPaymentPage() {
     const tx_ref = searchParams.get("tx_ref");
     if (tx_ref) {
       verifyPayment(tx_ref)
-        .then(() => { setSuccess("Payment verified! Funds are now held in escrow."); loadEscrow(); })
+        .then(() => { 
+          setSuccess("Payment verified! Funds are now held in escrow."); 
+          loadEscrow();
+          loadReceipt(tx_ref);
+        })
         .catch((e) => setError(e.message));
     } else {
       loadEscrow();
     }
   }, []);
+
+  const loadReceipt = async (tx_ref: string) => {
+    if (!token) return;
+    try {
+      const res = await getPaymentReceipt(token, tx_ref);
+      setReceipt(res.receipt);
+    } catch (e: any) {
+      console.error("Failed to load receipt:", e.message);
+    }
+  };
 
   const loadEscrow = async () => {
     if (!token) return;
@@ -76,6 +93,10 @@ export default function EscrowPaymentPage() {
     try {
       const res = await getEscrowStatus(token, jobId);
       setEscrow(res.escrow);
+      // Load receipt if escrow is funded or released
+      if (res.escrow && (res.escrow.status === "funded" || res.escrow.status === "released")) {
+        loadReceipt(res.escrow.treansaction_ref);
+      }
     } catch {
       setEscrow(null);
     } finally {
@@ -256,6 +277,55 @@ export default function EscrowPaymentPage() {
                       {escrow.treansaction_ref}
                     </p>
                   </div>
+
+                  {/* Receipt */}
+                  {receipt && escrow.status === "funded" && (
+                    <div className={`rounded-xl border overflow-hidden ${dm ? "bg-gray-700/50 border-gray-600" : "bg-slate-50 border-slate-200"}`}>
+                      <div className={`px-4 py-3 border-b flex items-center justify-between ${dm ? "border-gray-600" : "border-slate-200"}`}>
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-[#0084ca]" />
+                          <p className={`text-sm font-semibold ${text}`}>Payment Receipt</p>
+                        </div>
+                        <button
+                          onClick={() => window.print()}
+                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${dm ? "bg-gray-600 text-gray-200 hover:bg-gray-500" : "bg-white text-gray-600 hover:bg-slate-100 border border-slate-200"}`}
+                        >
+                          <Printer className="w-3.5 h-3.5" /> Print
+                        </button>
+                      </div>
+                      <div className="p-4 space-y-3">
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <p className={`font-medium ${muted}`}>Receipt Number</p>
+                            <p className={`font-mono mt-0.5 ${text}`}>{receipt.receipt_number}</p>
+                          </div>
+                          <div>
+                            <p className={`font-medium ${muted}`}>Payment Date</p>
+                            <p className={`mt-0.5 ${text}`}>{new Date(receipt.payment_date).toLocaleDateString()}</p>
+                          </div>
+                          <div>
+                            <p className={`font-medium ${muted}`}>Transaction ID</p>
+                            <p className={`font-mono mt-0.5 text-[10px] break-all ${text}`}>{receipt.transaction_id}</p>
+                          </div>
+                          <div>
+                            <p className={`font-medium ${muted}`}>Payment Method</p>
+                            <p className={`mt-0.5 capitalize ${text}`}>{receipt.method}</p>
+                          </div>
+                          <div>
+                            <p className={`font-medium ${muted}`}>Job Title</p>
+                            <p className={`mt-0.5 ${text}`}>{receipt.job_title}</p>
+                          </div>
+                          <div>
+                            <p className={`font-medium ${muted}`}>Amount Paid</p>
+                            <p className={`mt-0.5 font-bold text-emerald-600`}>{receipt.amount.toLocaleString()} {receipt.currency}</p>
+                          </div>
+                        </div>
+                        <div className={`pt-3 border-t text-center ${dm ? "border-gray-600" : "border-slate-200"}`}>
+                          <p className={`text-xs ${muted}`}>Paid by {receipt.company_name}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Actions */}
                   {escrow.status === "funded" && (

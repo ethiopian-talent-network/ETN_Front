@@ -18,6 +18,22 @@ export interface EscrowInfo {
   talent_email: string;
 }
 
+export interface PaymentReceipt {
+  id: number;
+  transaction_id: string;
+  amount: number;
+  currency: string;
+  method: string;
+  status: string;
+  created_at: string;
+  job_title: string;
+  talent_name: string;
+  talent_email: string;
+  company_name: string;
+  receipt_number: string;
+  payment_date: string;
+}
+
 // POST /api/payment/initialize — employer funds escrow via Chapa
 export const initializePayment = async (
   token: string,
@@ -69,5 +85,18 @@ export const releasePayment = async (
   });
   const json = await res.json();
   if (!res.ok) throw new Error(json.message || "Failed to release payment");
+  return json;
+};
+
+// GET /api/payment/receipt/:tx_ref — get payment receipt
+export const getPaymentReceipt = async (
+  token: string,
+  tx_ref: string,
+): Promise<{ receipt: PaymentReceipt }> => {
+  const res = await fetch(`${API_BASE_URL}/api/payment/receipt/${tx_ref}`, {
+    headers: authHeaders(token),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to fetch receipt");
   return json;
 };
