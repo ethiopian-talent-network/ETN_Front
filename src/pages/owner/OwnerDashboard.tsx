@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useDarkMode } from "../../contexts/DarkModeContext";
+import { API_BASE_URL } from "../../config/api";
 import {
   getOwnerDashboard, getOwnerPayments, getOwnerEscrow,
   verifyPaymentWithChapa, approvePayment,
@@ -60,9 +61,10 @@ export default function OwnerDashboard() {
   const [actionId, setActionId] = useState<number | null>(null);
   const [verifyingId, setVerifyingId] = useState<number | null>(null);
   const [verifiedPayments, setVerifiedPayments] = useState<Set<number>>(new Set());
-  const [receiptModal, setReceiptModal] = useState<any>(null);
+  const [releasingId, setReleasingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [receiptModal, setReceiptModal] = useState<any>(null);
 
   const loadDashboard = useCallback(async () => {
     if (!effectiveToken) return;
@@ -148,6 +150,35 @@ export default function OwnerDashboard() {
     } catch (e: any) {
       setActionId(null);
       setError(e.message || "Failed to approve payment");
+    }
+  };
+
+  const handleReleaseToTalent = async (escrowId: number, talentEmail: string) => {
+    if (!effectiveToken) return;
+    if (!window.confirm(`Release payment to ${talentEmail}? This action cannot be undone.`)) return;
+    
+    setReleasingId(escrowId);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/payment/owner/release/${escrowId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${effectiveToken}`,
+        },
+      });
+      const data = await res.json();
+      setReleasingId(null);
+      if (res.ok) {
+        setSuccessMsg(data.message || "Payment released to talent successfully");
+        loadEscrow(escPagination.page);
+        loadDashboard();
+      } else {
+        setError(data.message || "Failed to release payment");
+      }
+    } catch (e: any) {
+      setReleasingId(null);
+      setError(e.message || "Failed to release payment");
     }
   };
 
@@ -437,11 +468,12 @@ export default function OwnerDashboard() {
                       <th className={thCls}>Method</th>
                       <th className={thCls}>Escrow Status</th>
                       <th className={thCls}>Payment Date</th>
+                      <th className={thCls}>Actions</th>
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${dm ? "divide-gray-700" : "divide-slate-100"}`}>
                     {escrows.length === 0 ? (
-                      <tr><td colSpan={7} className={`text-center py-12 text-sm ${muted}`}>No escrow records found</td></tr>
+                      <tr><td colSpan={8} className={`text-center py-12 text-sm ${muted}`}>No escrow records found</td></tr>
                     ) : escrows.map((e) => (
                       <tr key={e.id} className={`transition-colors ${dm ? "hover:bg-gray-700/50" : "hover:bg-slate-50"}`}>
                         <td className={`${tdCls} max-w-[140px] truncate`}>{e.job_title || "—"}</td>
@@ -457,6 +489,26 @@ export default function OwnerDashboard() {
                         <td className={tdCls}><span className="capitalize">{e.payment_method || "—"}</span></td>
                         <td className={tdCls}><Badge status={e.status} /></td>
                         <td className={`${tdCls} whitespace-nowrap`}>{e.payment_date ? fmtDate(e.payment_date) : "—"}</td>
+                        <td className={tdCls}>
+                          {e.status === "funded" && (
+                            <button
+                              onClick={() => handleReleaseToTalent(e.id, e.talent_email)}
+                              disabled={releasingId === e.id}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                            >
+                              {releasingId === e.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unlock className="w-3 h-3" />}
+                              Release
+                            </button>
+                          )}
+                          {e.status === "released" && (
+                            <span className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700">
+                              <CheckCircle className="w-3 h-3" /> Released
+                            </span>
+                          )}
+                          {e.status === "pending" && (
+                            <span className={`text-xs ${muted}`}>Awaiting Payment</span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

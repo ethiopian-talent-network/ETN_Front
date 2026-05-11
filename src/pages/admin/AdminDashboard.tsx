@@ -14,7 +14,7 @@ import {
   ToggleLeft, ToggleRight, Trash2, Sun, Moon, TrendingUp,
   Building2, Crown, FileText, ChevronLeft, ChevronRight,
   Eye, ThumbsUp, ThumbsDown, ExternalLink, Award, FolderOpen,
-  Receipt, Printer,
+  Receipt, Printer, CreditCard,
 } from "lucide-react";
 
 function useInternalAuth() {
@@ -38,7 +38,7 @@ export default function AdminDashboard() {
   const { token, user } = useInternalAuth();
   const dm = darkMode;
 
-  const [tab, setTab] = useState<"overview" | "users" | "verification" | "licenses" | "payments">("overview");
+  const [tab, setTab] = useState<"overview" | "users" | "verification" | "licenses" | "payments" | "billing">("overview");
   const [stats, setStats] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [verificationRequests, setVerificationRequests] = useState<any[]>([]);
@@ -56,6 +56,10 @@ export default function AdminDashboard() {
   const [paymentsPagination, setPaymentsPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("all");
   const [receiptModal, setReceiptModal] = useState<any>(null);
+  const [billingList, setBillingList] = useState<any[]>([]);
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [actionBillingId, setActionBillingId] = useState<number | null>(null);
+  const [billingNote, setBillingNote] = useState<Record<number, string>>({});
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [roleFilter, setRoleFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -130,11 +134,24 @@ export default function AdminDashboard() {
     finally { setPaymentsLoading(false); }
   }, [token, paymentStatusFilter]);
 
+  const loadBilling = useCallback(async () => {
+    setBillingLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/billing/all`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const d = await res.json();
+      setBillingList(d.billing || []);
+    } catch {}
+    finally { setBillingLoading(false); }
+  }, [token]);
+
   useEffect(() => {
     if (tab === "verification") loadVerifications();
     if (tab === "licenses") loadLicenses();
     if (tab === "payments") loadPayments(1);
-  }, [tab, loadVerifications, loadLicenses, loadPayments]);
+    if (tab === "billing") loadBilling();
+  }, [tab, loadVerifications, loadLicenses, loadPayments, loadBilling]);
 
   const handleToggle = async (id: number) => {
     setActionId(id);
@@ -200,6 +217,23 @@ export default function AdminDashboard() {
       loadStats();
     } catch (e: any) { setError(e.message); }
     finally { setActionLicenseId(null); }
+  };
+
+  const handleBillingAction = async (id: number, action: "approve" | "reject") => {
+    setActionBillingId(id);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/billing/${id}/${action}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ admin_note: billingNote[id] || "" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      setSuccess(data.message);
+      setBillingList(prev => prev.map(b => b.id === id ? { ...b, is_verified: action === "approve", approval_status: action === "approve" ? "approved" : "rejected" } : b));
+      loadStats();
+    } catch (e: any) { setError(e.message); }
+    finally { setActionBillingId(null); }
   };
 
   const openProfile = async (req: any) => {
@@ -296,13 +330,10 @@ export default function AdminDashboard() {
         {/* Tabs + actions */}
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div className={`flex items-center gap-1 p-1 rounded-xl ${dm ? "bg-gray-800" : "bg-slate-200"}`}>
-            {(["overview", "users", "verification", "licenses", "payments"] as const).map((t) => (
-              <button key={t} onClick={() => setTab(t)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${
-                  tab === t ? "bg-white shadow-sm text-amber-600 dark:bg-gray-700" : dm ? "text-gray-400 hover:text-gray-200" : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                {t === "verification" ? (
+            {(["overview", "users", "verification", "licenses", "payments", "billing"] as const).map((t) => {
+              let label: React.ReactNode = t;
+              if (t === "verification") {
+                label = (
                   <span className="flex items-center gap-1.5">
                     Verification
                     {verificationRequests.length > 0 && tab !== "verification" && (
@@ -311,7 +342,9 @@ export default function AdminDashboard() {
                       </span>
                     )}
                   </span>
-                ) : t === "licenses" ? (
+                );
+              } else if (t === "licenses") {
+                label = (
                   <span className="flex items-center gap-1.5">
                     Licenses
                     {licenseRequests.length > 0 && tab !== "licenses" && (
@@ -320,9 +353,22 @@ export default function AdminDashboard() {
                       </span>
                     )}
                   </span>
-                ) : t === "payments" ? "Payments" : t}
-              </button>
-            ))}
+                );
+              } else if (t === "payments") {
+                label = "Payments";
+              } else if (t === "billing") {
+                label = "Billing";
+              }
+              return (
+                <button key={t} onClick={() => setTab(t)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${
+                    tab === t ? "bg-white shadow-sm text-amber-600 dark:bg-gray-700" : dm ? "text-gray-400 hover:text-gray-200" : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
 
           <button
@@ -628,6 +674,127 @@ export default function AdminDashboard() {
           </>
         )}
 
+        {/* ── BILLING ── */}
+        {tab === "billing" && (
+          <>
+            <div className="flex items-center justify-between mb-5">
+              <h1 className={`text-xl font-bold ${text}`}>Talent Billing Information</h1>
+              <button onClick={loadBilling} className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg transition-colors ${dm ? "hover:bg-gray-800 text-gray-400" : "hover:bg-slate-200 text-gray-500"}`}>
+                <RefreshCw className="w-4 h-4" /> Refresh
+              </button>
+            </div>
+            {billingLoading ? (
+              <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-amber-500" /></div>
+            ) : billingList.length === 0 ? (
+              <div className={`rounded-xl border p-16 text-center ${card}`}>
+                <CreditCard className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+                <p className={`font-medium ${text}`}>No billing information</p>
+                <p className={`text-sm mt-1 ${muted}`}>No talents have added billing information yet.</p>
+              </div>
+            ) : (
+              <div className={`rounded-xl border overflow-hidden ${card}`}>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className={`border-b ${dm ? "border-gray-800 bg-gray-900/60" : "border-slate-200 bg-slate-50"}`}>
+                        <th className={thCls}>Talent Name</th>
+                        <th className={thCls}>Email</th>
+                        <th className={thCls}>Phone</th>
+                        <th className={thCls}>Payout Method</th>
+                        <th className={thCls}>Account</th>
+                        <th className={thCls}>Status</th>
+                        <th className={thCls}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className={`divide-y ${dm ? "divide-gray-800" : "divide-slate-100"}`}>
+                      {billingList.map((b) => (
+                        <tr key={b.id} className={`transition-colors ${dm ? "hover:bg-gray-800/50" : "hover:bg-slate-50"}`}>
+                          <td className={tdCls}>
+                            <p className="font-medium">{b.user_name}</p>
+                          </td>
+                          <td className={`${tdCls} ${muted}`}>{b.user_email}</td>
+                          <td className={tdCls}>{b.phone}</td>
+                          <td className={tdCls}>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border capitalize ${
+                              b.payout_method === "telebirr" ? "bg-blue-50 text-blue-700 border-blue-200" :
+                              b.payout_method === "cbe_birr" ? "bg-purple-50 text-purple-700 border-purple-200" :
+                              "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            }`}>
+                              {b.payout_method === "telebirr" ? "Telebirr" : b.payout_method === "cbe_birr" ? "CBE Birr" : "Bank"}
+                            </span>
+                          </td>
+                          <td className={tdCls}>
+                            <div>
+                              <p className="font-mono text-xs">{b.account_number}</p>
+                              {b.payout_method === "bank" && b.bank_name && (
+                                <p className={`text-xs ${muted}`}>{b.bank_name}</p>
+                              )}
+                            </div>
+                          </td>
+                          <td className={tdCls}>
+                            <div className="space-y-1">
+                              <span className={`inline-flex items-center gap-1 text-xs font-medium ${
+                                b.approval_status === "approved" ? "text-emerald-600" :
+                                b.approval_status === "rejected" ? "text-red-600" :
+                                "text-amber-600"
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${
+                                  b.approval_status === "approved" ? "bg-emerald-500" :
+                                  b.approval_status === "rejected" ? "bg-red-500" :
+                                  "bg-amber-500"
+                                }`} />
+                                {b.approval_status === "approved" ? "Verified" :
+                                 b.approval_status === "rejected" ? "Rejected" :
+                                 "Pending"}
+                              </span>
+                              {b.admin_note && (
+                                <p className={`text-xs italic ${muted}`}>"{b.admin_note}"</p>
+                              )}
+                            </div>
+                          </td>
+                          <td className={tdCls}>
+                            {b.approval_status === "pending" ? (
+                              <div className="flex flex-col gap-2">
+                                <input
+                                  value={billingNote[b.id] || ""}
+                                  onChange={(e) => setBillingNote(n => ({ ...n, [b.id]: e.target.value }))}
+                                  placeholder="Note (optional)"
+                                  className={`w-full px-2 py-1 rounded text-xs border ${dm ? "bg-gray-800 border-gray-600 text-white" : "bg-white border-gray-300"}`}
+                                />
+                                <div className="flex gap-1">
+                                  <button
+                                    onClick={() => handleBillingAction(b.id, "approve")}
+                                    disabled={actionBillingId === b.id}
+                                    className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-emerald-500 hover:bg-emerald-600 text-white font-medium disabled:opacity-50"
+                                  >
+                                    {actionBillingId === b.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+                                    Verify
+                                  </button>
+                                  <button
+                                    onClick={() => handleBillingAction(b.id, "reject")}
+                                    disabled={actionBillingId === b.id}
+                                    className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-red-500 hover:bg-red-600 text-white font-medium disabled:opacity-50"
+                                  >
+                                    <XCircle className="w-3 h-3" />
+                                    Reject
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <span className={`text-xs ${muted}`}>
+                                {b.approval_status === "approved" ? "Verified" : "Rejected"}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
+        )}
         {/* ── PAYMENTS ── */}
         {tab === "payments" && (
           <>
@@ -738,8 +905,6 @@ export default function AdminDashboard() {
           </>
         )}
       </div>
-
-      {/* ── Profile Modal ── */}
       {profileModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setProfileModal(null)}>
           <div className={`w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border shadow-2xl ${dm ? "bg-gray-900 border-gray-800" : "bg-white border-slate-200"}`} onClick={e => e.stopPropagation()}>
