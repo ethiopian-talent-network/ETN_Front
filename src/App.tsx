@@ -19,6 +19,7 @@ import ApplyToJob from "./pages/ApplyToJob";
 import ProposalsPage from "./pages/employer/ProposalsPage";
 import AllProposalsPage from "./features/employer/components/ProposalsPage";
 import EscrowPaymentPage from "./pages/employer/EscrowPaymentPage";
+import AgreementPage from "./pages/employer/AgreementPage";
 import Portfolio from "./pages/Portfolio";
 import NotificationsPage from "./pages/NotificationsPage";
 import VerifyIdentity from "./pages/VerifyIdentity";
@@ -26,6 +27,10 @@ import OwnerDashboard from "./pages/owner/OwnerDashboard";
 import InternalLogin from "./pages/admin/InternalLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import TalentsDashboard from "./pages/admin/TalentsDashboard";
+import PayoutsManagementPage from "./pages/admin/PayoutsManagementPage";
+import AgreementsPage from "./pages/AgreementsPage";
+import SimpleAITest from "./components/SimpleAITest";
+import AITest from "./components/AITest";
 import { DarkModeProvider } from "./contexts/DarkModeContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/routes/ProtectedRoute";
@@ -236,14 +241,37 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path={EMPLOYER_ROUTES.AGREEMENT.path}
+                element={
+                  <ProtectedRoute allowedRoles={["employer"]}>
+                    <AgreementPage />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Internal portal routes — no auth wrapper, handled internally */}
               <Route path="/admin/login" element={<InternalLogin />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/talents" element={<TalentsDashboard />} />
+              <Route path="/admin/payouts" element={<PayoutsManagementPage />} />
+
+              {/* Shared routes - Agreements and Payouts */}
+              <Route
+                path="/agreements"
+                element={
+                  <ProtectedRoute allowedRoles={["talent", "employer"]}>
+                    <AgreementsPage />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Owner route */}
               <Route path={OWNER_ROUTES.DASHBOARD.path} element={<OwnerDashboard />} />
+
+              {/* AI Test Routes - Development only */}
+              <Route path="/ai-test" element={<AITest />} />
+              <Route path="/simple-ai-test" element={<SimpleAITest />} />
 
               {/* Error routes */}
               <Route

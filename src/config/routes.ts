@@ -187,6 +187,12 @@ export const EMPLOYER_ROUTES: Record<string, RouteConfig> = {
     roles: [RouteRole.EMPLOYER],
     description: "Fund escrow and release payment for a job",
   },
+  AGREEMENT: {
+    path: "/employer/agreement/:jobId",
+    title: "Work Agreement",
+    roles: [RouteRole.EMPLOYER],
+    description: "Review and accept work agreement before payment",
+  },
 };
 
 export const OWNER_ROUTES: Record<string, RouteConfig> = {

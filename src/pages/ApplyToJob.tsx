@@ -8,6 +8,8 @@ import {
 import { getJobApplicationDetails, submitApplication } from "../api/jobs/jobApi";
 import { getVerificationStatus, requestVerification } from "../api/talent/talentApi";
 import { TALENT_ROUTES, PUBLIC_ROUTES } from "../config/routes";
+import AIApplicationAssistant from "../components/application/AIApplicationAssistant";
+import { useTalentProfile } from "../hooks/useTalentProfile";
 
 interface VerificationStatus {
   is_verified: boolean;
@@ -37,6 +39,7 @@ export default function ApplyToJob() {
   const { darkMode } = useDarkMode();
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
+  const { profile: talentProfile } = useTalentProfile();
 
   const [applicationDetails, setApplicationDetails] =
     useState<ApplicationDetails | null>(null);
@@ -120,6 +123,13 @@ export default function ApplyToJob() {
       [field]: value,
     }));
     setError(null);
+  };
+
+  const handleAIContentGenerated = (content: string, type: 'cover_letter' | 'proposal') => {
+    setFormData((prev) => ({
+      ...prev,
+      [type]: content,
+    }));
   };
 
   const validateForm = (): boolean => {
@@ -533,6 +543,25 @@ export default function ApplyToJob() {
               </div>
             )}
 
+            {/* AI Assistant */}
+            {applicationDetails?.canApply && talentProfile && (
+              <AIApplicationAssistant
+                talentProfile={talentProfile}
+                jobDetails={{
+                  title: applicationDetails.job.title,
+                  description: applicationDetails.job.description || '',
+                  requirements: applicationDetails.job.requirements || '',
+                  company: applicationDetails.job.company,
+                  location: applicationDetails.job.location,
+                  experience: applicationDetails.job.experience,
+                  salary: applicationDetails.job.salary,
+                  budget: applicationDetails.job.budget
+                }}
+                onContentGenerated={handleAIContentGenerated}
+                darkMode={darkMode}
+              />
+            )}
+
             {/* Application Form */}
             {applicationDetails?.canApply && (
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -544,13 +573,22 @@ export default function ApplyToJob() {
                       : "bg-white border-gray-200"
                   }`}
                 >
-                  <label
-                    className={`block text-sm font-medium mb-2 ${
-                      darkMode ? "text-gray-300" : "text-gray-700"
-                    }`}
-                  >
-                    Cover Letter <span className="text-red-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label
+                      className={`block text-sm font-medium ${
+                        darkMode ? "text-gray-300" : "text-gray-700"
+                      }`}
+                    >
+                      Cover Letter <span className="text-red-500">*</span>
+                    </label>
+                    {formData.cover_letter && (
+                      <span className={`text-xs ${
+                        darkMode ? "text-green-400" : "text-green-600"
+                      }`}>
+                        ✓ Content ready
+                      </span>
+                    )}
+                  </div>
                   <textarea
                     value={formData.cover_letter}
                     onChange={(e) =>
@@ -582,14 +620,23 @@ export default function ApplyToJob() {
                       : "bg-white border-gray-200"
                   }`}
                 >
-                  <label
-                    className={`block text-sm font-medium mb-2 flex items-center gap-2 ${
-                      darkMode ? "text-gray-300" : "text-gray-700"
-                    }`}
-                  >
-                    <FileText className="w-4 h-4" />
-                    Detailed Proposal
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label
+                      className={`block text-sm font-medium flex items-center gap-2 ${
+                        darkMode ? "text-gray-300" : "text-gray-700"
+                      }`}
+                    >
+                      <FileText className="w-4 h-4" />
+                      Detailed Proposal
+                    </label>
+                    {formData.proposal && (
+                      <span className={`text-xs ${
+                        darkMode ? "text-green-400" : "text-green-600"
+                      }`}>
+                        ✓ Content ready
+                      </span>
+                    )}
+                  </div>
                   <textarea
                     value={formData.proposal}
                     onChange={(e) =>

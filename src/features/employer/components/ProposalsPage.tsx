@@ -51,11 +51,18 @@ export const ProposalsPage: React.FC<ProposalsPageProps> = ({ darkMode = false }
     return acc;
   }, {});
 
-  const handleAction = async (proposalId: number, status: string, jobId?: number) => {
+  const handleAction = async (proposalId: number, status: string, jobId?: number, talentName?: string, talentEmail?: string, profileImage?: string) => {
     if (status === "hired" && jobId) {
       navigate(
-        EMPLOYER_ROUTES.ESCROW_PAYMENT.path.replace(":job_id", String(jobId)),
-        { state: { application_id: proposalId } }
+        `/employer/agreement/${jobId}`,
+        { 
+          state: { 
+            application_id: proposalId,
+            talent_name: talentName,
+            talent_email: talentEmail,
+            profile_image: profileImage,
+          } 
+        }
       );
       return;
     }
@@ -308,7 +315,7 @@ export const ProposalsPage: React.FC<ProposalsPageProps> = ({ darkMode = false }
                     <>
                       {/* Primary CTA — Hire & Pay */}
                       <button
-                        onClick={() => handleAction(proposal.id, "hired", proposal.job_id)}
+                        onClick={() => handleAction(proposal.id, "hired", proposal.job_id, proposal.talent_name, proposal.talent_email, proposal.profile_image)}
                         className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0084ca] hover:bg-[#006ba6] text-white transition-colors shadow-sm"
                       >
                         <ShieldCheck className="w-4 h-4" />

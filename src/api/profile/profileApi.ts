@@ -445,3 +445,8 @@ export const profileApi = {
     }
   },
 };
+
+// Export individual functions for easier imports
+export const getTalentProfile = profileApi.getProfile;
+export const updateTalentProfile = profileApi.updateProfile;
+export const getProfileStats = profileApi.getProfileStats;

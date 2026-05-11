@@ -153,7 +153,14 @@ const ProposalsPage: React.FC = () => {
 
   const handleAccept = () => {
     if (selectedProposal) {
-      handleStatusUpdate(selectedProposal.id, "hired");
+      navigate(`/employer/agreement/${selectedProposal.job_id}`, {
+        state: {
+          application_id: selectedProposal.id,
+          talent_name: selectedProposal.talent_name,
+          talent_email: selectedProposal.talent_email,
+          profile_image: selectedProposal.profile_image,
+        },
+      });
     }
   };
 

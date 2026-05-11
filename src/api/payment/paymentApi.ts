@@ -100,3 +100,28 @@ export const getPaymentReceipt = async (
   if (!res.ok) throw new Error(json.message || "Failed to fetch receipt");
   return json;
 };
+
+// GET /api/payment/owner/payments — get all payments for owner dashboard
+export const getOwnerPayments = async (
+  token: string,
+): Promise<{ payments: any[] }> => {
+  const res = await fetch(`${API_BASE_URL}/api/payment/owner/payments`, {
+    headers: authHeaders(token),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to fetch payments");
+  return json;
+};
+
+// GET /api/payment/owner/payments/:talentId — get payments for specific talent
+export const getOwnerPaymentsByTalent = async (
+  token: string,
+  talentId: number,
+): Promise<{ payments: any[] }> => {
+  const res = await fetch(`${API_BASE_URL}/api/payment/owner/payments/${talentId}`, {
+    headers: authHeaders(token),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to fetch talent payments");
+  return json;
+};
